@@ -2,6 +2,7 @@
 
 import aiofiles
 from aiocsv import AsyncDictReader
+from typing import Literal
 
 from constants.paths import CRIT_TABLE_PATH, FUMBLE_TABLE_PATH
 
@@ -19,7 +20,7 @@ def validate_crit_percentage(input_percentage: int) -> bool:
     return input_percentage in range(1, 101)
 
 
-def validate_damage_type(valid_types: list[str], input_type: str) -> str | bool:
+def validate_damage_type(valid_types: list[str], input_type: str) -> str | Literal[False]:
     """Validate user input damage type
 
     Args:
@@ -27,7 +28,7 @@ def validate_damage_type(valid_types: list[str], input_type: str) -> str | bool:
         input_type (`str`): User input damage type
 
     Returns:
-        `Union[str, bool]`: damage type if it is valid, False otherwise.
+        `str | Literal[False]`: damage type if it is valid, False otherwise.
     """
     input_type = input_type.lower()
 
@@ -78,16 +79,20 @@ async def get_crit_result(crit_percentage: int, dmg_type: str) -> str:
     Returns:
         `str`: Description of the crit result
     """
-    if validate_crit_percentage(crit_percentage):
-        valid_dmg_types, crit_table = await read_crit_csv_async(CRIT_TABLE_PATH)
-        if clean_dmg_type := validate_damage_type(valid_dmg_types, dmg_type):
-            response = crit_table[crit_percentage][clean_dmg_type]  # pyright: ignore[reportArgumentType]
-        else:
-            # using chr(10) as newline, because f-string doesn't support \n in expression part
-            response = f"**Error:** Invalid Damage Type\nSupported types: ```\n{chr(10).join(valid_dmg_types)}```"
-    else:
-        response = "**Error:** Invalid Percentage Roll\nMust be value from 1-100"
-    return response
+    # Check for valid %
+    if not validate_crit_percentage(crit_percentage):
+        return "**Error:** Invalid Percentage Roll\nMust be value from 1-100"
+
+    # Read crit table
+    valid_dmg_types, crit_table = await read_crit_csv_async(CRIT_TABLE_PATH)
+
+    # Check for valid type
+    if not (clean_dmg_type := validate_damage_type(valid_dmg_types, dmg_type)):
+        # using chr(10) as newline, because f-string doesn't support \n in expression part
+        return f"**Error:** Invalid Damage Type\nSupported types: ```\n{chr(10).join(valid_dmg_types)}```"
+
+    # % and type are valid, so return crit result
+    return crit_table[crit_percentage][clean_dmg_type]
 
 
 async def get_fumble_result(fumble_percentage: int) -> str:
@@ -99,10 +104,13 @@ async def get_fumble_result(fumble_percentage: int) -> str:
     Returns:
         `str`: Description of the fumble result
     """
-    if validate_crit_percentage(fumble_percentage):
-        headers, fumble_table = await read_crit_csv_async(FUMBLE_TABLE_PATH)
-        fumble_column = headers[0]
-        response = fumble_table[fumble_percentage][fumble_column]
-    else:
-        response = "**Error:** Invalid Percentage Roll\nMust be value from 1-100"
-    return response
+    # Check for valid %
+    if not validate_crit_percentage(fumble_percentage):
+        return "**Error:** Invalid Percentage Roll\nMust be value from 1-100"
+
+    # Read fumble table
+    headers, fumble_table = await read_crit_csv_async(FUMBLE_TABLE_PATH)
+
+    # % is valid, so return fumble result
+    fumble_column = headers[0]
+    return fumble_table[fumble_percentage][fumble_column]
