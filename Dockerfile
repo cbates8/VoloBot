@@ -1,9 +1,13 @@
-FROM python:3.10
+FROM ghcr.io/astral-sh/uv:python3.14-alpine
 
-COPY requirements.txt .
+COPY pyproject.toml uv.lock /app/
 
-RUN pip install --no-cache-dir -r requirements.txt
+WORKDIR /app
 
-WORKDIR /src
+RUN uv sync --locked --no-dev
 
-CMD [ "python3", "volobot.py" ]
+COPY src/ /app/src
+
+WORKDIR /app/src
+
+CMD [ "uv", "run", "volobot.py" ]

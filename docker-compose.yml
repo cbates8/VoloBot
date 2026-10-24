@@ -3,6 +3,3 @@ services:
       build: .
       environment:
         DISCORD_TOKEN: ${DISCORD_TOKEN}
-      volumes: 
-      # Using a volume instead of Dockerfile COPY so rebuild is unnecessary, code changes will be picked up on container restart
-      - ./src:/src

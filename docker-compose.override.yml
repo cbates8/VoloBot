@@ -1,0 +1,5 @@
+services:
+  volobot:
+    volumes:
+      # Override Dockerfile COPY with volume so rebuild is unnecessary and code changes will be picked up live
+      - ./src:/app/src
