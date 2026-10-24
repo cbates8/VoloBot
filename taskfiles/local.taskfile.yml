@@ -2,7 +2,6 @@
 version: "3"
 
 tasks:
-
   deps:
     desc: Install project dependencies
     sources:
@@ -46,3 +45,13 @@ tasks:
       - task: lint
       - task: format
       - task: typecheck
+
+  commit:
+    desc: Commit changes using commitizen
+    deps: [deps]
+    cmd: uv run cz commit {{.CLI_ARGS}}
+
+  gitmojify:
+    desc: Gitmojify a commit message
+    deps: [deps]
+    cmd: uv run gitmojify -m {{.CLI_ARGS}} && echo
