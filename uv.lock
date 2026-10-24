@@ -1001,7 +1001,7 @@ wheels = [
 ]
 
 [[package]]
-name = "volo-bot"
+name = "volobot"
 version = "2.0.0"
 source = { virtual = "." }
 dependencies = [
