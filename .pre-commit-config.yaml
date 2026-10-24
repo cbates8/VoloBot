@@ -1,24 +1,42 @@
 default_language_version:
   python: python3
 
+# Include commit-msg to `pre-commit install` since it is used for commitizen and cz-conventional-gitmoji
+default_install_hook_types: [pre-commit, commit-msg]
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v6.0.0
     hooks:
       - id: end-of-file-fixer
       - id: trailing-whitespace
+      - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     # Ruff version.
-    rev: v0.16.3
+    rev: v0.17.2
     hooks:
       # Run the linter.
       - id: ruff-check
-        args: [ --fix ]
+        args: [--fix]
       # Run the formatter.
       - id: ruff-format
 
   - repo: https://github.com/DetachHead/basedpyright-prek-mirror
-    rev: 1.39.10
+    rev: 1.40.2
     hooks:
       - id: basedpyright
+
+  # Validate commit message adheres to commitizen format
+  - repo: https://github.com/commitizen-tools/commitizen
+    rev: v4.19.2
+    hooks:
+      - id: commitizen
+        additional_dependencies: [cz-conventional-gitmoji]
+        fail_fast: true # Skip downstream hooks if this fails
+
+  # Add gitmoji prefix if missing from validated commit message
+  - repo: https://github.com/ljnsn/cz-conventional-gitmoji
+    rev: v0.7.0
+    hooks:
+      - id: conventional-gitmoji

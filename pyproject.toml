@@ -17,7 +17,13 @@ dependencies = [
 [dependency-groups]
 dev = [
     "basedpyright>=1.39.10",
+    "commitizen>=4.10.1",
+    "cz-conventional-gitmoji>=0.7.0",
 ]
+
+[tool.commitizen]
+name = "cz_gitmoji"
+version_provider = "uv"
 
 
 [tool.ruff]
