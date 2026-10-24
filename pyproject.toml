@@ -19,7 +19,16 @@ dev = [
     "basedpyright>=1.39.10",
     "commitizen>=4.10.1",
     "cz-conventional-gitmoji>=0.7.0",
+    "python-semantic-release>=10.7.0",
 ]
+
+# Used for PSR GHA and Dependabot
+[project.optional-dependencies]
+build = ["uv ~= 0.9.26"]
+
+# [build-system]
+# requires = ["uv_build>=0.9.26,<0.10.0"]
+# build-backend = "uv_build"
 
 [tool.commitizen]
 name = "cz_gitmoji"
@@ -61,3 +70,33 @@ ignore = [
     "src/utils/combat/character.py", # tmp ignore because I'm going to re-write this anyway
     "src/utils/combat/args.py" # ditto
 ]
+
+
+[tool.semantic_release]
+# https://python-semantic-release.readthedocs.io/en/latest/configuration/configuration-guides/uv_integration.html
+build_command = """
+    python -m pip install -e '.[build]'
+    uv lock --upgrade-package "$PACKAGE_NAME"
+    git add uv.lock
+"""
+commit_parser = "emoji"
+version_toml = [
+    "pyproject.toml:project.version",
+]
+version_variables = [
+    "src/__init__.py:__version__"
+]
+
+[tool.semantic_release.commit_parser_options]
+major_tags = ["💥"]
+minor_tags = ["✨", "🚸", "💄", "📱", "♻️", "🦺", "🧵", "👔"]
+patch_tags = ["🐛", "🚑️", "🩹", "⚡️", "🥅", "🔒️", "🔐", "👽️", "🏗️", "🔊", "🔇", "🚩", "💬", "💡", "🎨", "♿️", "🚚", "🍱", "🗃️", "🌐", "✏️", "🤡", "⏪️", "📌", "⬆️", "⬇️", "➕", "➖", "📈", "🗑️", "🔥", "⚰️"]
+
+[tool.semantic_release.branches.releases]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.branches.other]
+match = ".*"
+prerelease = true
+prerelease_token = "dev"
