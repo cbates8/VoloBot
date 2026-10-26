@@ -99,4 +99,3 @@ prerelease = false
 [tool.semantic_release.branches.other]
 match = ".*"
 prerelease = true
-prerelease_token = "dev"
