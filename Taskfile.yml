@@ -1,17 +1,21 @@
 # https://taskfile.dev
 
-version: '3'
+version: "3"
 
 includes:
-
   docker:
-      taskfile: ./taskfiles/docker.taskfile.yml
-      flatten: false
+    taskfile: ./taskfiles/docker.taskfile.yml
+    flatten: false
 
   local:
-      taskfile: ./taskfiles/local.taskfile.yml
-      flatten: false
+    taskfile: ./taskfiles/local.taskfile.yml
+    flatten: false
 
   pre-commit:
-      taskfile: ./taskfiles/pre_commit.taskfile.yml
-      flatten: false
+    taskfile: ./taskfiles/pre_commit.taskfile.yml
+    flatten: false
+
+  gha:
+    taskfile: ./taskfiles/gha.taskfile.yml
+    flatten: false
+    internal: true
