@@ -12,6 +12,7 @@ dependencies = [
     "aiofiles>=25.1.0",
     "beautifulsoup4>=4.14.3",
     "discord-py>=2.6.4",
+    "pydantic>=2.13.5",
 ]
 
 [dependency-groups]

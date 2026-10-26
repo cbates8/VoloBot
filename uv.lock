@@ -1009,6 +1009,7 @@ dependencies = [
     { name = "aiofiles" },
     { name = "beautifulsoup4" },
     { name = "discord-py" },
+    { name = "pydantic" },
 ]
 
 [package.optional-dependencies]
@@ -1030,6 +1031,7 @@ requires-dist = [
     { name = "aiofiles", specifier = ">=25.1.0" },
     { name = "beautifulsoup4", specifier = ">=4.14.3" },
     { name = "discord-py", specifier = ">=2.6.4" },
+    { name = "pydantic", specifier = ">=2.13.5" },
     { name = "uv", marker = "extra == 'build'", specifier = "~=0.9.26" },
 ]
 provides-extras = ["build"]
