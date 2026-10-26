@@ -3,17 +3,17 @@ version: "3"
 
 tasks:
   deps:
-    desc: Install project dependencies
+    summary: Install project dependencies
     cmd: uv sync --dev
 
   lint:
-    desc: Lint the codebase
+    summary: Lint the codebase
     cmd: uvx ruff check --fix
 
   format:
-    desc: Format the codebase
+    summary: Format the codebase
     cmd: uvx ruff format
 
   typecheck:
-    desc: Typecheck the codebase
+    summary: Typecheck the codebase
     cmd: uv run basedpyright

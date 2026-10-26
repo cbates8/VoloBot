@@ -18,4 +18,3 @@ includes:
   gha:
     taskfile: ./taskfiles/gha.taskfile.yml
     flatten: false
-    internal: true
