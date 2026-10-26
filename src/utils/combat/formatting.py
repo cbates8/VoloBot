@@ -5,7 +5,8 @@ import os
 from discord import Embed
 
 from constants.colors import ANSI_WRAPPER, GREY_WRAPPER, NORMAL_WRAPPER, RED_WRAPPER
-from utils.combat.character import Character, CombatData, Condition, HitPoints
+from utils.combat.character import CombatData
+from utils.combat.models import Character, Condition, HitPoints
 from utils.logging import get_logger
 
 LOGGER = get_logger(os.path.basename(__file__))
@@ -103,7 +104,7 @@ def format_pc(character: Character) -> str:
     ac_string = format_ac(character.ac)
 
     # Format Conditions
-    conditions_string = format_conditions(character.conditions)
+    conditions_string = format_conditions(character.conditions) if character.conditions else ""
 
     # Format final character string
     pc_str = PC_STRING.format(name=character.name, hp=hp_string, ac=ac_string, conditions=conditions_string)
@@ -122,7 +123,7 @@ def format_npc(character: Character) -> str:
     hp_config = NPC_HP_CONFIG[character.hp.hint]
 
     # Format Conditions
-    conditions_string = format_conditions(character.conditions)
+    conditions_string = format_conditions(character.conditions) if character.conditions else ""
 
     npc_str = NPC_STRING.format(name=character.name, hp=hp_config["display"], conditions=conditions_string)
     formatted_str = hp_config["format_wrapper"].format(body=npc_str)
@@ -150,7 +151,7 @@ def format_character(character: Character) -> str:
 ###############
 
 
-def bin_combat_by_initiative(combat_data: CombatData) -> dict[int, CombatData]:
+def bin_combat_by_initiative(combat_data: CombatData) -> dict[int | None, CombatData]:
     """Organize combat into initiative bins
 
     Args:
@@ -159,7 +160,7 @@ def bin_combat_by_initiative(combat_data: CombatData) -> dict[int, CombatData]:
     Returns:
         `dict[int, CombatData]`: Binned combat data
     """
-    binned_data: dict[int, list[Character]] = dict()
+    binned_data: dict[int | None, list[Character]] = dict()
     for c in combat_data:
         i = c.initiative
         if i not in binned_data.keys():
@@ -169,7 +170,7 @@ def bin_combat_by_initiative(combat_data: CombatData) -> dict[int, CombatData]:
     return binned_data
 
 
-def get_structured_combat(data: dict[int, CombatData]) -> Embed:
+def get_structured_combat(data: dict[int | None, CombatData]) -> Embed:
     """Get combat embed structured with fields
 
     Args:
@@ -192,7 +193,7 @@ def get_structured_combat(data: dict[int, CombatData]) -> Embed:
     return embed
 
 
-def get_text_combat(data: dict[int, CombatData]) -> Embed:
+def get_text_combat(data: dict[int | None, CombatData]) -> Embed:
     """Get combat embed as text description
 
     Args:
@@ -237,7 +238,7 @@ def get_combat_embed(combat_data: CombatData, as_text: bool = False) -> Embed:
     # Sort by initiative (descending)
     # `None` should be at the bottom of the order,
     # lambda treats `None` as zero for comparisons
-    sorted_data = dict(sorted(binned_data.items(), key=lambda item: item[0] if item[0] is not None else 0, reverse=True))  # pyright: ignore[reportUnnecessaryComparison]
+    sorted_data = dict(sorted(binned_data.items(), key=lambda item: item[0] if item[0] is not None else 0, reverse=True))
 
     if as_text:
         # Format initiative as a code block in the embed description

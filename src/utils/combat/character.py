@@ -1,48 +1,13 @@
 """Combat Data Structures"""
 
 import os
-from dataclasses import dataclass
 from typing import Literal
 
 from utils.logging import get_logger
 from utils.combat.types import RAW_CHAR_DICT_TYPE, PARSED_CHAR_DICT_TYPE
+from utils.combat.models import HitPoints, Condition, Character
 
 LOGGER = get_logger(os.path.basename(__file__))
-
-###############
-# Dataclasses #
-###############
-
-
-@dataclass
-class HitPoints:
-    """Dataclass representing character hit points"""
-
-    current: int = None
-    max: int | None = None
-    temp: int | None = None
-    hint: str | None = None
-
-
-@dataclass
-class Condition:
-    """Dataclass representing character condition"""
-
-    name: str = None
-    duration: str = None
-
-
-@dataclass
-class Character:
-    """Dataclass representing a character"""
-
-    name: str
-    hp: HitPoints
-    conditions: list[Condition]
-    type: Literal["pc", "npc"]
-    id: str = None
-    initiative: int = None
-    ac: int = None
 
 
 #########
@@ -63,16 +28,7 @@ def load_character_from_file(char_dict: PARSED_CHAR_DICT_TYPE) -> Character:
     Returns:
         `Character`: Character object
     """
-    # Get HP object
-    hp_dict = char_dict.pop("hp", None)
-    hp = HitPoints(**hp_dict)
-
-    # Get list of Condition objects
-    conditions_list = char_dict.pop("conditions", None)
-    conditions = [Condition(**condition_dict) for condition_dict in conditions_list]
-
-    # Get final Character object
-    return Character(**char_dict, hp=hp, conditions=conditions)
+    return Character(**char_dict)
 
 
 def load_character_from_args(char_dict: RAW_CHAR_DICT_TYPE, char_type: Literal["pc", "npc"]) -> Character:
@@ -107,7 +63,7 @@ def load_character_from_args(char_dict: RAW_CHAR_DICT_TYPE, char_type: Literal["
     # Get list of Condition objects
     condition_name = char_dict.pop("cn", None)
     condition_duration = char_dict.pop("cd", None)
-    conditions = [Condition(name=condition_name, duration=condition_duration)]
+    conditions = [Condition(name=condition_name, duration=condition_duration)] if condition_name else None
 
     # Get final Character object
     return Character(**char_dict, hp=hp, conditions=conditions, type=char_type)
@@ -159,11 +115,14 @@ def update_condition(character: Character, condition_name: str, condition_durati
     """
     # Update condition if it exists
     is_updated = False
-    for c in character.conditions:
-        if c.name.lower() == condition_name.lower():
-            c.duration = condition_duration
-            is_updated = True
-            break
+    if character.conditions:
+        for c in character.conditions:
+            if c.name.lower() == condition_name.lower():
+                c.duration = condition_duration
+                is_updated = True
+                break
+    else:
+        character.conditions = list()
 
     # Otherwise, add as new condition
     if not is_updated:

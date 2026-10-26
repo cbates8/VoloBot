@@ -1,7 +1,6 @@
 """Combat Utils"""
 
 import os
-from dataclasses import asdict
 
 from discord import Embed
 
@@ -68,7 +67,7 @@ class CombatClient:
             combat_id (`str`, optional): ID of the combat to save. If None, save to default combat file. Defaults to None.
         """
         combat_path = get_combat_path(combat_id)
-        combat_data_json = [asdict(c) for c in self.combat_data]
+        combat_data_json = [c.model_dump() for c in self.combat_data]
         await write_json_async(combat_path, combat_data_json)
 
     async def __clear_combat__(self: "CombatClient") -> None:
