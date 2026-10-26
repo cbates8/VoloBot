@@ -6,6 +6,9 @@ from constants.paths import INVENTORY_PATH
 from utils.embed import dict_to_embed
 from utils.json_utils import read_json_async, write_json_async
 
+DESCRIPTION_KEY = "description"
+QUANTITY_KEY = "quantity"
+
 
 async def get_item(item: str | None = None) -> Embed | None:
     """Get content of the inventory.
@@ -44,13 +47,13 @@ async def store_item(item: str, quantity: int = 1, description: str | None = Non
     # Check if the item already exists in inventory
     # If so, increase the quantity
     if item in inventory.keys():
-        inventory[item]["quantity"] += quantity
+        inventory[item][QUANTITY_KEY] += quantity
         # Update the description of the item if given
         if description is not None:
-            inventory[item]["description"] = description
+            inventory[item][DESCRIPTION_KEY] = description
     # Otherwise, simply add the item to the dict
     else:
-        inventory[item] = {"description": description, "quantity": quantity}
+        inventory[item] = {DESCRIPTION_KEY: description, QUANTITY_KEY: quantity}
 
     # Save inventory
     await write_json_async(INVENTORY_PATH, inventory)
@@ -66,10 +69,10 @@ async def remove_item(item: str, quantity: int | None = None) -> None:
     # Read inventory from disk
     inventory = await read_json_async(INVENTORY_PATH)
 
-    if quantity is None or quantity >= inventory[item]["quantity"]:
+    if quantity is None or quantity >= inventory[item][QUANTITY_KEY]:
         del inventory[item]
     else:
-        inventory[item]["quantity"] -= quantity
+        inventory[item][QUANTITY_KEY] -= quantity
 
     # Save inventory
     await write_json_async(INVENTORY_PATH, inventory)
