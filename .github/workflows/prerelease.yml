@@ -2,45 +2,47 @@ name: VoloBot Pre-Release
 
 on:
   workflow_dispatch:
-  push:
-  # branches: [main]
-
-permissions:
-  contents: read
+  pull_request:
+    types: [opened, reopened, synchronize]
 
 env:
-  IMAGE: ghcr.io/cbates8/volo-bot
+  IMAGE: ghcr.io/cbates8/volobot
 
 jobs:
   # Lint, Format, Typecheck
+  # https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations
   hygiene:
-    name: hygiene
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     strategy:
       matrix:
         command:
           - ruff-check
           - ruff-format
           - basedpyright
+
     steps:
       - uses: actions/checkout@v7
         with:
-          # required to grab the history of the PR
           fetch-depth: 0
-      - name: Determine Git Refs for a Push
-        if: github.event_name == 'push'
-        run: |
-          echo "BASE=${{ github.event.before }}" >> $GITHUB_ENV
-          echo "HEAD=${{ github.event.after }}" >> $GITHUB_ENV
+
+      # - name: Determine Git Refs for a Push
+      #   if: github.event_name == 'push'
+      #   run: |
+      #     echo "BASE=${{ github.event.before }}" >> $GITHUB_ENV
+      #     echo "HEAD=${{ github.event.after }}" >> $GITHUB_ENV
+
       - name: Determine Git Refs for a PR
         if: github.event_name == 'pull_request'
         run: |
           echo "BASE=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
           echo "HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
+
       - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
+
       - uses: pre-commit/action@v3.0.1
         with:
           extra_args: ${{ matrix.command }} --from-ref ${{ env.BASE }} --to-ref ${{ env.HEAD }}
