@@ -80,12 +80,32 @@ class Dev(Cog):
             await self.bot.unload_extension(path)
             reload_modules()
             await self.bot.load_extension(path)
+            await self.bot.tree.sync()
         except Exception as error:
             LOGGER.exception(error, exc_info=error)
             embed = create_error_embed(error)
             await ctx.send(embed=embed)
         else:
             await ctx.send("**`SUCCESS`**")
+
+    @command(name="clear", hidden=True)
+    @is_owner()
+    async def clear_slash_commands(
+        self: "Dev", ctx: Context[Bot], clear_global: bool = parameter(description="If global commands should be cleared", default=False)
+    ) -> None:
+        """Clear slash commands from the current guild
+
+        Args:
+            ctx (`Context`): Message context object from Discord
+            clear_global (`bool`): If global commands should be cleared. Defaults to `False`
+        """
+        if clear_global:
+            self.bot.tree.clear_commands(guild=None)
+            await self.bot.tree.sync()
+        else:
+            self.bot.tree.clear_commands(guild=ctx.guild)
+            await self.bot.tree.sync(guild=ctx.guild)
+        await ctx.send("**`SUCCESS`**")
 
     @command(name="set_activity", help="Set the bot's activity", hidden=True)
     @is_owner()
