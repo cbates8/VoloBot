@@ -100,3 +100,6 @@ prerelease = false
 [tool.semantic_release.branches.other]
 match = ".*"
 prerelease = true
+
+[tool.semantic_release.changelog]
+mode = "init"
