@@ -24,7 +24,7 @@ jobs:
           - ruff-format
           - basedpyright
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # required to grab the history of the PR
           fetch-depth: 0
@@ -38,7 +38,7 @@ jobs:
         run: |
           echo "BASE=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
           echo "HEAD=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.14"
       - uses: pre-commit/action@v3.0.1
