@@ -55,9 +55,9 @@ jobs:
       contents: write
 
     outputs:
-      released: ${{ steps.release.outputs.released }}
-      version: ${{ steps.release.outputs.version }}
-      tag: ${{ steps.release.outputs.tag }}
+      released: ${{ steps.psr.outputs.released }}
+      version: ${{ steps.psr.outputs.version }}
+      tag: ${{ steps.psr.outputs.tag }}
 
     steps:
       - uses: actions/checkout@v7
@@ -69,9 +69,8 @@ jobs:
         run: git reset --hard ${{ github.event.pull_request.head.sha }}
 
       - uses: python-semantic-release/python-semantic-release@v10.7.0
-        id: release
+        id: psr
         with:
-          #build_metadata: pr-${{ github.event.pull_request.number }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
   # Build and Push to GHCR

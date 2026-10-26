@@ -1,0 +1,85 @@
+name: VoloBot Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/cbates8/volobot
+
+jobs:
+  # Generate Release
+  # https://python-semantic-release.readthedocs.io/en/latest/configuration/automatic-releases/github-actions.html
+  release:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    outputs:
+      released: ${{ steps.psr.outputs.released }}
+      version: ${{ steps.psr.outputs.version }}
+      tag: ${{ steps.psr.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Pin to Workflow SHA
+        run: git checkout -B ${{ github.ref_name }} ${{ github.sha }}
+
+      - uses: python-semantic-release/python-semantic-release@v10.7.0
+        id: psr
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Build and Push to GHCR
+  # https://pradumnasaraf.dev/blog/publish-image-on-ghcr
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    if: needs.release.outputs.released == 'true'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # Checkout from the release tag
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.release.outputs.tag }}
+
+      # Log in to GHCR
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Generate metadata
+      - uses: docker/metadata-action@v5
+        id: metadata
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.release.outputs.version }}
+            type=raw,value=latest
+          #  type=semver,pattern={{major}}.{{minor}},value=${{ needs.release.outputs.version }}
+          #  type=semver,pattern={{major}},value=${{ needs.release.outputs.version }}
+
+      # Build and push image
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
