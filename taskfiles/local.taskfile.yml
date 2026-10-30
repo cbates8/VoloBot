@@ -1,0 +1,57 @@
+# Local Dev Tasks
+version: "3"
+
+tasks:
+  deps:
+    desc: Install project dependencies
+    sources:
+      - pyproject.toml
+      - uv.lock
+    generates:
+      - .venv/pyvenv.cfg
+    cmd: uv sync --dev
+    silent: true
+
+  lint:
+    desc: Lint the codebase
+    sources:
+      - src/**/*.py
+      - tests/**/*.py
+      - pyproject.toml
+    cmd: uvx ruff check {{.CLI_ARGS}}
+
+  format:
+    desc: Format the codebase
+    sources:
+      - src/**/*.py
+      - tests/**/*.py
+      - pyproject.toml
+    cmd: uvx ruff format {{.CLI_ARGS}}
+
+  typecheck:
+    desc: Typecheck the codebase
+    deps: [deps]
+    sources:
+      - src/**/*.py
+      - tests/**/*.py
+    cmd: uv run basedpyright {{.CLI_ARGS}}
+
+  healthy:
+    desc: Check code health by linting, formatting, and typechecking
+    sources:
+      - src/**/*.py
+      - tests/**/*.py
+    cmds:
+      - task: lint
+      - task: format
+      - task: typecheck
+
+  commit:
+    desc: Commit changes using commitizen
+    deps: [deps]
+    cmd: uv run cz commit {{.CLI_ARGS}}
+
+  gitmojify:
+    desc: Gitmojify a commit message
+    deps: [deps]
+    cmd: uv run gitmojify -m {{.CLI_ARGS}} && echo

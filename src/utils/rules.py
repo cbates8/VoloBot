@@ -1,7 +1,5 @@
 """Rule Lookup Utils"""
 
-from typing import Optional
-
 from discord import Embed
 
 from constants.paths import RULES_PATH
@@ -9,7 +7,7 @@ from utils.embed import dict_to_embed
 from utils.json_utils import read_json_async
 
 
-def get_known_rules(rulebook: dict) -> Embed:
+def get_known_rules(rulebook: dict[str, str]) -> Embed:
     """Get list of known rules
 
     Args:
@@ -24,15 +22,15 @@ def get_known_rules(rulebook: dict) -> Embed:
     return dict_to_embed(title, content)
 
 
-async def get_rule(rule: str = None) -> Optional[Embed]:
+async def get_rule(rule: str | None = None) -> Embed | None:
     """Return entry of the specified rule
     If no rule provided, return list of known rules
 
     Args:
-        rule (`str`): The rule item to list. Defaults to `None`.
+        rule (`str`, optional): The rule item to list. Defaults to `None`.
 
     Returns:
-        `Optional[Embed]`: Discord embed representing rule content
+        `Embed` | `None`: Discord embed representing rule content
     """
     rulebook = await read_json_async(RULES_PATH)
 

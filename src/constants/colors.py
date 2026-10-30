@@ -1,4 +1,4 @@
-""" Discord ANSI Color Codes
+"""Discord ANSI Color Codes
 
 ANSI formatting should be done within a ```ansi ``` code block.
 Use `\u001b[0m` as as suffix to revert formatting (i.e. you only want to modify a few words/lines).

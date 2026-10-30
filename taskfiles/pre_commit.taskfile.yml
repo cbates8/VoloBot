@@ -1,0 +1,17 @@
+# Pre-Commit Tasks
+
+version: '3'
+
+tasks:
+
+  install:
+    desc: Install pre-commit hooks
+    cmds:
+      # pre-commit-uv patches pre-commit to use uv to install Python-based tools, drastically increasing speed https://github.com/tox-dev/pre-commit-uv
+      - uv tool install pre-commit --with pre-commit-uv
+      - uvx pre-commit install --install-hooks
+
+  update:
+    desc: Update pre-commit hooks
+    cmds:
+      - uvx pre-commit autoupdate

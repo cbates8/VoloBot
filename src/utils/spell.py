@@ -1,6 +1,5 @@
 """Spell Scraping Utils"""
 
-from typing import Union
 from urllib.error import HTTPError
 
 from bs4 import BeautifulSoup
@@ -40,7 +39,7 @@ def get_spell_name(parsed_html: BeautifulSoup) -> str:
         `str`: Spell name
     """
     # Get the name of the spell from the page title
-    return parsed_html.find("h1", class_="page-title").text
+    return parsed_html.find("h1", class_="page-title").text  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def get_spell_description(parsed_html: BeautifulSoup) -> str:
@@ -53,7 +52,7 @@ def get_spell_description(parsed_html: BeautifulSoup) -> str:
         `str`: Spell description
     """
     # Get the spell description from the page content
-    return parsed_html.find("div", class_="more-info-content").get_text("\n\n", True)
+    return parsed_html.find("div", class_="more-info-content").get_text("\n\n", True)  # pyright: ignore[reportOptionalMemberAccess]
 
 
 def get_spell_from_ddb(spell_name: str) -> Embed:
@@ -86,7 +85,7 @@ def get_spell_from_ddb(spell_name: str) -> Embed:
     return dict_to_embed(spell_name, spell_dict)
 
 
-async def get_spell_from_file(spell_name: str) -> Embed:
+async def get_spell_from_file(spell_name: str) -> Embed | None:
     """Get spell info from local JSON file
 
     Args:
@@ -104,7 +103,7 @@ async def get_spell_from_file(spell_name: str) -> Embed:
             return embed
 
 
-async def get_spell(spell_name: str, source: str = "all") -> Union[str, Embed]:
+async def get_spell(spell_name: str, source: str = "all") -> str | Embed:
     """Get a spell from a local file or online
 
     Args:
@@ -114,6 +113,8 @@ async def get_spell(spell_name: str, source: str = "all") -> Union[str, Embed]:
     Returns:
         `Union[str, Embed]`: Spell as a Discord embed, or an error message
     """
+    response = None
+
     # Validate source
     source = source.lower()
     if source not in VALID_SOURCES:
@@ -135,6 +136,7 @@ async def get_spell(spell_name: str, source: str = "all") -> Union[str, Embed]:
     # Check for the spell locally
     if source in LOCAL_SOURCES:
         response = await get_spell_from_file(spell_name)
-        if not response:
-            response = MISSING_SPELL_TEXT.format(spell_name=spell_name)
-        return response
+
+    if not response:
+        response = MISSING_SPELL_TEXT.format(spell_name=spell_name)
+    return response

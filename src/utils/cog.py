@@ -34,7 +34,7 @@ def get_modules() -> list[str]:
     Returns:
         `list[str]`: List of our custom Python modules
     """
-    modules = list()
+    modules: list[str] = list()
     for module in MODULES_TO_RELOAD:
         for dirpath, _, filenames in os.walk(module):
             for file in filenames:

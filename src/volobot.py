@@ -4,6 +4,7 @@ GitHub: https://github.com/cbates8/Volo-Bot
 """
 
 import os
+from typing import Any, override
 
 from discord import Intents
 from discord.ext.commands import Bot
@@ -15,9 +16,6 @@ LOGGER = get_logger(os.path.basename(__file__))
 #################
 ### BOT SETUP ###
 #################
-
-# Get DISCORD_TOKEN from env var
-TOKEN = os.getenv("DISCORD_TOKEN")
 
 # Define command prefix
 COMMAND_PREFIX = "!"
@@ -47,15 +45,16 @@ INITIAL_EXTENSIONS = [
 class VoloBot(Bot):
     """VoloBot, a D&D Discord Bot"""
 
-    def __init__(self: "VoloBot", extensions: str, **kwargs) -> None:
+    def __init__(self: "VoloBot", extensions: list[str], **kwargs: Any) -> None:  # pyright: ignore[reportExplicitAny]
         """Initialize Volobot, pass kwargs to Bot constructor
 
         Args:
-            extensions (`str`): List of extensions (cogs) to load
+            extensions (`list[str]`): List of extensions (cogs) to load
         """
         super().__init__(**kwargs)  # Pass kwargs to Bot constructor
-        self.initial_extensions = extensions
+        self.initial_extensions: list[str] = extensions
 
+    @override
     async def setup_hook(self: "VoloBot") -> None:
         """A coroutine to be called to setup the bot.
 
@@ -76,5 +75,9 @@ class VoloBot(Bot):
 
 
 if __name__ == "__main__":
-    bot = VoloBot(extensions=INITIAL_EXTENSIONS, command_prefix=COMMAND_PREFIX, description=DESCRIPTION, intents=INTENTS)
-    bot.run(TOKEN, log_handler=None)
+    # Get DISCORD_TOKEN from env var
+    if token := os.getenv("DISCORD_TOKEN"):
+        bot = VoloBot(extensions=INITIAL_EXTENSIONS, command_prefix=COMMAND_PREFIX, description=DESCRIPTION, intents=INTENTS)
+        bot.run(token, log_handler=None)
+    else:
+        LOGGER.error("Error: Var DISCORD_TOKEN not set")

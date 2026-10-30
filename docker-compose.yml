@@ -1,8 +1,5 @@
 services:
   volobot:
-      build: .
+      image: ghcr.io/cbates8/volobot:1.0.0-rc.1
       environment:
         DISCORD_TOKEN: ${DISCORD_TOKEN}
-      volumes: 
-      # Using a volume instead of Dockerfile COPY so rebuild is unnecessary, code changes will be picked up on container restart
-      - ./src:/src

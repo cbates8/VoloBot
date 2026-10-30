@@ -1,0 +1,19 @@
+# GHA Tasks
+version: "3"
+
+tasks:
+  deps:
+    summary: Install project dependencies
+    cmd: uv sync --dev
+
+  lint:
+    summary: Lint the codebase
+    cmd: uvx ruff check --fix
+
+  format:
+    summary: Format the codebase
+    cmd: uvx ruff format
+
+  typecheck:
+    summary: Typecheck the codebase
+    cmd: uv run basedpyright

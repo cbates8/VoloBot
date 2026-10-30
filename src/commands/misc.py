@@ -18,12 +18,12 @@ class Misc(Cog):
         Args:
             bot (`Bot`): Discord Bot object
         """
-        self.bot = bot
+        self.bot: Bot = bot
 
     @command(name="roll", help="Roll virtual dice")
     async def roll_dice(
         self: "Misc",
-        ctx: Context,
+        ctx: Context[Bot],
         number_of_dice: int = parameter(description="The number of dice to be rolled"),
         number_of_sides: int = parameter(description="How many sides each rolled die should have"),
     ) -> None:
@@ -40,7 +40,7 @@ class Misc(Cog):
         await ctx.send(", ".join(dice))
 
     @command(name="meme", help="Dank Me Me")
-    async def send_meme(self: "Misc", ctx: Context) -> None:
+    async def send_meme(self: "Misc", ctx: Context[Bot]) -> None:
         """Sends a meme to context
 
         Args:
@@ -54,7 +54,7 @@ class Misc(Cog):
         await ctx.send(file=File(f"{MEME_DIR}/{random_meme}"))
 
     @command(name="ping", help="Ping Volobot")
-    async def send_ping(self: "Misc", ctx: Context) -> None:
+    async def send_ping(self: "Misc", ctx: Context[Bot]) -> None:
         """Send the estimated ping of the requesting user
 
         Args:

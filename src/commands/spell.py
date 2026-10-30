@@ -1,5 +1,6 @@
 """Spell Commands"""
 
+from typing import Literal
 from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command, parameter
 
@@ -15,14 +16,14 @@ class Spell(Cog):
         Args:
             bot (`Bot`): Discord Bot object
         """
-        self.bot = bot
+        self.bot: Bot = bot
 
     @command(name="spell", help="Search spell descriptions")
     async def send_spell_description(
         self: "Spell",
-        ctx: Context,
+        ctx: Context[Bot],
         spell_name: str = parameter(description="The name of the spell to search for"),
-        source: str = parameter(default="all", description="Source to get spell info from ('web' | 'local' | 'all')"),
+        source: Literal["web", "local", "all"] = parameter(default="all", description="Source to get spell info from ('web' | 'local' | 'all')"),
     ) -> None:
         """Search for a spell and return its description
 

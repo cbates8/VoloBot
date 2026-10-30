@@ -1,9 +1,10 @@
 """Discord Embed Utils"""
 
 from discord import Embed
+from typing import Any
 
 
-def dict_to_embed(title: str, content: dict) -> Embed:
+def dict_to_embed(title: str, content: dict[str, Any]) -> Embed:  # pyright: ignore[reportExplicitAny]
     """Convert a dict object to a Discord Embed object
 
     Args:
@@ -19,13 +20,13 @@ def dict_to_embed(title: str, content: dict) -> Embed:
             embed.description = value
         elif key == "Content" and isinstance(value, list):
             formatted_values = ""
-            for line in value:
+            for line in value:  # pyright: ignore[reportUnknownVariableType]
                 formatted_values += f"{line}\n\n"
             embed.description = formatted_values
         else:
             if isinstance(value, dict):
                 formatted_values = ""
-                for k, v in value.items():
+                for k, v in value.items():  # pyright: ignore[reportUnknownVariableType]
                     formatted_values += f"{k}: {v}\n\n"
             else:
                 formatted_values = value

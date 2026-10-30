@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from utils.logging import get_logger
+from utils.combat.types import RAW_CHAR_DICT_TYPE, PARSED_CHAR_DICT_TYPE
 
 LOGGER = get_logger(os.path.basename(__file__))
 
@@ -18,9 +19,9 @@ class HitPoints:
     """Dataclass representing character hit points"""
 
     current: int = None
-    max: int = None
-    temp: int = None
-    hint: str = None
+    max: int | None = None
+    temp: int | None = None
+    hint: str | None = None
 
 
 @dataclass
@@ -53,7 +54,7 @@ class Character:
 CombatData = list[Character]
 
 
-def load_character_from_file(char_dict: dict) -> Character:
+def load_character_from_file(char_dict: PARSED_CHAR_DICT_TYPE) -> Character:
     """Load character object from dict
 
     Args:
@@ -74,7 +75,7 @@ def load_character_from_file(char_dict: dict) -> Character:
     return Character(**char_dict, hp=hp, conditions=conditions)
 
 
-def load_character_from_args(char_dict: dict, char_type: Literal["pc", "npc"]) -> Character:
+def load_character_from_args(char_dict: RAW_CHAR_DICT_TYPE, char_type: Literal["pc", "npc"]) -> Character:
     """Load character object from dict
 
     Args:
@@ -188,7 +189,7 @@ def remove_condition(character: Character, condition_name: str) -> None:
         LOGGER.info("Could not find condition `%s`", condition_name)
 
 
-def update_character_from_args(character: Character, char_dict: dict) -> None:
+def update_character_from_args(character: Character, char_dict: RAW_CHAR_DICT_TYPE) -> None:
     """Update a character object
 
     Args:

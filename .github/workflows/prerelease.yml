@@ -1,0 +1,114 @@
+name: VoloBot Pre-Release
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+concurrency:
+  group: prerelease-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/cbates8/volobot
+  TASK-GHA: task gha
+
+jobs:
+  # Lint, Format, Typecheck
+  # https://docs.github.com/en/actions/how-tos/write-workflows/choose-what-workflows-do/run-job-variations
+  hygiene:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    strategy:
+      matrix:
+        command:
+          - lint
+          - format
+          - typecheck
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          version: 0.9.26
+
+      - uses: arduino/setup-task@v2
+        with:
+          version: 3
+
+      - run: "${{ env.TASK-GHA }}:deps"
+
+      - run: "${{ env.TASK-GHA }}:${{ matrix.command }}"
+
+  # Generate Pre-Release
+  # https://python-semantic-release.readthedocs.io/en/latest/configuration/automatic-releases/github-actions.html
+  prerelease:
+    needs: hygiene
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    outputs:
+      released: ${{ steps.psr.outputs.released }}
+      version: ${{ steps.psr.outputs.version }}
+      tag: ${{ steps.psr.outputs.tag }}
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Pin to triggering commit
+        run: git reset --hard ${{ github.event.pull_request.head.sha }}
+
+      - uses: python-semantic-release/python-semantic-release@v10.7.0
+        id: psr
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Build and Push to GHCR
+  # https://pradumnasaraf.dev/blog/publish-image-on-ghcr
+  publish:
+    needs: prerelease
+    runs-on: ubuntu-latest
+    if: needs.prerelease.outputs.released == 'true'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      # Checkout from the prerelease tag
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.prerelease.outputs.tag }}
+
+      # Log in to GHCR
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Generate metadata
+      - uses: docker/metadata-action@v5
+        id: metadata
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=semver,pattern={{version}},value=${{ needs.prerelease.outputs.version }}
+
+      # Build and push image
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}

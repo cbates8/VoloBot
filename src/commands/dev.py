@@ -23,11 +23,11 @@ class Dev(Cog):
         Args:
             bot (`Bot`): Discord Bot object
         """
-        self.bot = bot
+        self.bot: Bot = bot
 
     @command(name="load", hidden=True)
     @is_owner()
-    async def load_cog(self: "Dev", ctx: Context, cog: str = parameter(description="Name of the cog to load (e.g. 'crit')")) -> None:
+    async def load_cog(self: "Dev", ctx: Context[Bot], cog: str = parameter(description="Name of the cog to load (e.g. 'crit')")) -> None:
         """Loads a cog
 
         Args:
@@ -47,7 +47,7 @@ class Dev(Cog):
 
     @command(name="unload", hidden=True)
     @is_owner()
-    async def unload_cog(self: "Dev", ctx: Context, cog: str = parameter(description="Name of the cog to unload (e.g. 'crit')")) -> None:
+    async def unload_cog(self: "Dev", ctx: Context[Bot], cog: str = parameter(description="Name of the cog to unload (e.g. 'crit')")) -> None:
         """Unloads a cog
 
         Args:
@@ -67,7 +67,7 @@ class Dev(Cog):
 
     @command(name="reload", hidden=True)
     @is_owner()
-    async def reload_cog(self: "Dev", ctx: Context, cog: str = parameter(description="Name of the cog to reload (e.g. 'crit')")) -> None:
+    async def reload_cog(self: "Dev", ctx: Context[Bot], cog: str = parameter(description="Name of the cog to reload (e.g. 'crit')")) -> None:
         """Reloads a cog, and any imported Python modules
 
         Args:
@@ -91,7 +91,7 @@ class Dev(Cog):
     @is_owner()
     async def set_activity(
         self: "Dev",
-        ctx: Context,
+        ctx: Context[Bot],
         activity_type: str = parameter(description="Type of activity to be displayed (e.g. 'Playing')"),
         activity_name: str = parameter(description="Description of activity to be displayed"),
     ) -> None:

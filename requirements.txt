@@ -1,4 +1,0 @@
-aiocsv
-aiofiles
-beautifulsoup4
-discord.py

@@ -44,4 +44,4 @@ def get_ddb_statblock_value(item_name: str, parsed_html: BeautifulSoup) -> str:
     item = parsed_html.find("div", class_=f"ddb-statblock-item ddb-statblock-item-{item_name}")
 
     # Get all text containied in the value section of the statblock
-    return item.find("div", class_="ddb-statblock-item-value").get_text(";", True).split(";")[0]
+    return item.find("div", class_="ddb-statblock-item-value").get_text(";", True).split(";")[0]  # pyright: ignore[reportOptionalMemberAccess]

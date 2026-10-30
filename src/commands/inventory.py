@@ -14,13 +14,13 @@ class Inventory(Cog):
         Args:
             bot (`Bot`): Discord Bot object
         """
-        self.bot = bot
+        self.bot: Bot = bot
 
     @command(name="bag", help="Check the party's inventory")
     async def check_inventory(
         self: "Inventory",
-        ctx: Context,
-        item: str = parameter(
+        ctx: Context[Bot],
+        item: str | None = parameter(
             default=None,
             description=" The name of the inventory item to list. If ommitted, entire inventory will be listed",
         ),
@@ -40,10 +40,10 @@ class Inventory(Cog):
     @command(name="store", help="Store items in the party's inventory")
     async def store_inventory(
         self: "Inventory",
-        ctx: Context,
+        ctx: Context[Bot],
         item: str = parameter(description="The name of the item to store"),
         quantity: int = parameter(default=1, description="The quantity of the item to store"),
-        description: str = parameter(default=None, description="A description of the stored item"),
+        description: str | None = parameter(default=None, description="A description of the stored item"),
     ) -> None:
         """Store items in inventory (write to inventory.json)
 
@@ -62,9 +62,9 @@ class Inventory(Cog):
     @command(name="remove", help="Remove items from the party's inventory")
     async def remove_inventory(
         self: "Inventory",
-        ctx: Context,
+        ctx: Context[Bot],
         item: str = parameter(description="The name of the item to remove"),
-        quantity: int = parameter(default=None, description="The quantity of the item to remove"),
+        quantity: int | None = parameter(default=None, description="The quantity of the item to remove"),
     ) -> None:
         """Remove items from inventory.json
 

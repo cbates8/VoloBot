@@ -15,13 +15,13 @@ class Rule(Cog):
         Args:
             bot (`Bot`): Discord Bot object
         """
-        self.bot = bot
+        self.bot: Bot = bot
 
     @command(name="rule", help="Search rule descriptions")
     async def send_rule_description(
         self: "Rule",
-        ctx: Context,
-        rule_name: str = parameter(default=None, description="The name of the rule to search for"),
+        ctx: Context[Bot],
+        rule_name: str | None = parameter(default=None, description="The name of the rule to search for"),
     ) -> None:
         """Search for a rule and return its description
 

@@ -6,6 +6,7 @@ from dataclasses import asdict
 from discord import Embed
 
 from constants.paths import LIVE_COMBAT_PATH, SAVED_COMBAT_DIR
+from utils.combat.types import RAW_CHAR_DICT_TYPE
 from utils.combat.character import (
     CombatData,
     load_character_from_args,
@@ -20,7 +21,7 @@ from utils.logging import get_logger
 LOGGER = get_logger(os.path.basename(__file__))
 
 
-def get_combat_path(combat_id: str = None) -> str:
+def get_combat_path(combat_id: str | None = None) -> str:
     """Given a combat ID, get it's filepath
 
     Args:
@@ -50,7 +51,7 @@ class CombatClient:
         """Init Combat"""
         self.combat_data: CombatData = list()
 
-    async def __load_combat__(self: "CombatClient", combat_id: str = None) -> None:
+    async def __load_combat__(self: "CombatClient", combat_id: str | None = None) -> None:
         """Load a combat file
 
         Args:
@@ -60,7 +61,7 @@ class CombatClient:
         raw_combat_data = await read_json_async(combat_path)
         self.combat_data = [load_character_from_file(c) for c in raw_combat_data]
 
-    async def __save_combat__(self: "CombatClient", combat_id: str = None) -> None:
+    async def __save_combat__(self: "CombatClient", combat_id: str | None = None) -> None:
         """Save combat data to a file
 
         Args:
@@ -84,7 +85,7 @@ class CombatClient:
         # Save new (empty) combat to default file
         await self.__save_combat__()
 
-    async def begin(self: "CombatClient", combat_id: str = None) -> Embed:
+    async def begin(self: "CombatClient", combat_id: str | None = None) -> Embed:
         """Initiate a combat encounter.
 
         If preset provided, load encounter from file.
@@ -121,22 +122,22 @@ class CombatClient:
         # Return saved path
         return get_combat_path(combat_id)
 
-    async def load(self: "CombatClient", combat_id: str = None) -> Embed:
+    async def load(self: "CombatClient", combat_id: str) -> Embed:
         """Load combat
 
         Args:
-            combat_id (`str`, optional): ID of the combat to load. Defaults to None.
+            combat_id (`str`, optional): ID of the combat to load
 
         Returns:
             `Embed`: Discord Embed representing the loaded encounter
         """
-        if combat_id:
-            # Load saved combat into memory
-            await self.__load_combat__(combat_id)
-            # Save to "active" file
-            await self.__save_combat__()
-            # Generate embed
-            return get_combat_embed(self.combat_data)
+        # TODO: If combat_id is none, list saved IDs?
+        # Load saved combat into memory
+        await self.__load_combat__(combat_id)
+        # Save to "active" file
+        await self.__save_combat__()
+        # Generate embed
+        return get_combat_embed(self.combat_data)
 
     def list(self: "CombatClient") -> Embed:
         """List saved combats
@@ -152,14 +153,14 @@ class CombatClient:
         """Clear combat"""
         await self.__clear_combat__()
 
-    async def show(self: "CombatClient", as_text: bool = False) -> None:
+    async def show(self: "CombatClient", as_text: bool = False) -> Embed:
         """Show combat"""
         # Load active combat into memory
         await self.__load_combat__()
         # Generate embed
         return get_combat_embed(self.combat_data, as_text)
 
-    async def add(self: "CombatClient", char_dict: dict) -> None:
+    async def add(self: "CombatClient", char_dict: RAW_CHAR_DICT_TYPE) -> None:
         """Add a player character to the encounter
 
         Args:
@@ -177,7 +178,7 @@ class CombatClient:
         # save to file
         await self.__save_combat__()
 
-    async def madd(self: "CombatClient", char_dict: dict) -> None:
+    async def madd(self: "CombatClient", char_dict: dict[str, str | int | bool]) -> None:
         """Add a non-player character (monster) to the encounter
 
         Args:
@@ -194,7 +195,7 @@ class CombatClient:
         # Save to file
         await self.__save_combat__()
 
-    async def update(self: "CombatClient", char_dict: dict) -> str:
+    async def update(self: "CombatClient", char_dict: dict[str, str | int | bool]) -> str:
         """Update an existing character (PC or NPC)
 
         Args:
@@ -208,9 +209,16 @@ class CombatClient:
 
         name = char_dict.pop("name")
 
+        # TODO: placeholder string confirmation for basedpyright
+        # Will remove this once I've implemented character schema validation
+        if not isinstance(name, str):
+            return f"Name must be a string, instead got {type(name)}: {name}"
+
+        # Set default response
         response = f"Could not find character `{name}`"
 
-        # Get character by name (TODO: support character ID)
+        # Get character by name
+        # TODO: support get by character ID
         for character in self.combat_data:
             if character.name.lower() == name.lower():
                 update_character_from_args(character, char_dict)

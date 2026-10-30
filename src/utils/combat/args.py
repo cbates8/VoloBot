@@ -41,7 +41,7 @@ class CombatArgs(argparse.Namespace):
 
 
 # Parse `combat` command arguments
-def get_combat_args(*args: tuple) -> CombatArgs:  # noqa: PLR0915
+def get_combat_args(*args: str) -> CombatArgs:  # noqa: PLR0915
     """Parse arguments for the `combat` command
 
     Raises:

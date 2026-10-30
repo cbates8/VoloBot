@@ -22,11 +22,16 @@ class Event(Cog):
         Args:
             bot (`Bot`): Discord Bot object
         """
-        self.bot = bot
+        self.bot: Bot = bot
 
     @Cog.listener()
     async def on_ready(self: "Event") -> None:
         """On ready, bot will log to the console confirming its connection to discord, as well as any guilds it has been added to"""
+        if not self.bot.user:
+            # I'm not sure this is even possible but it makes the type checker happy
+            LOGGER.error("ERROR: Bot is not logged in")
+            return
+
         LOGGER.info("%s has connected to Discord!", self.bot.user.name)
         LOGGER.info("%s is connected to the following guilds:", self.bot.user.name)
         for guild in self.bot.guilds:
@@ -50,7 +55,7 @@ class Event(Cog):
             await message.channel.send(response)
 
     @Cog.listener()
-    async def on_command_error(self: "Event", ctx: Context, error: Exception) -> None:
+    async def on_command_error(self: "Event", ctx: Context[Bot], error: Exception) -> None:
         """Send error messages to context in addition to logging
 
         Args:

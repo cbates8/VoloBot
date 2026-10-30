@@ -1,7 +1,6 @@
 """Combat Formatting Utils"""
 
 import os
-from typing import Any
 
 from discord import Embed
 
@@ -54,15 +53,14 @@ def format_conditions(conditions: list[Condition]) -> str:
     Returns:
         `str`: Formatted conditions string
     """
-    conditions = [
+    parsed_conditions = [
         CONDITION_STRING.format(condition=cond.name, duration=CONDITION_DURATION.format(duration=cond.duration) if cond.duration else None)
         for cond in conditions
-        if cond.name is not None
     ]
-    return CONDITION_WRAPPER.format(conditions=", ".join(conditions)) if conditions else ""
+    return CONDITION_WRAPPER.format(conditions=", ".join(parsed_conditions)) if parsed_conditions else ""
 
 
-def format_ac(ac: int) -> str:
+def format_ac(ac: int | None) -> str:
     """Format Character armor class
 
     Args:
@@ -84,7 +82,7 @@ def format_pc_hp(hp: HitPoints) -> str:
     Returns:
         `str`: Formatted HP string
     """
-    current_hp = hp.current if hp.current is not None else "??"
+    current_hp = hp.current if hp.current is not None else "??"  # pyright: ignore[reportUnnecessaryComparison]
     max_hp = hp.max if hp.max is not None else "??"
     return HP_STRING.format(current=current_hp, max=max_hp)
 
@@ -152,16 +150,16 @@ def format_character(character: Character) -> str:
 ###############
 
 
-def bin_combat_by_initiative(combat_data: CombatData) -> dict[Any, CombatData]:
+def bin_combat_by_initiative(combat_data: CombatData) -> dict[int, CombatData]:
     """Organize combat into initiative bins
 
     Args:
         combat_data (`CombatData`): Data to organize
 
     Returns:
-        `dict[Any, CombatData]`: Binned combat data
+        `dict[int, CombatData]`: Binned combat data
     """
-    binned_data: dict[int, list] = dict()
+    binned_data: dict[int, list[Character]] = dict()
     for c in combat_data:
         i = c.initiative
         if i not in binned_data.keys():
@@ -171,7 +169,7 @@ def bin_combat_by_initiative(combat_data: CombatData) -> dict[Any, CombatData]:
     return binned_data
 
 
-def get_structured_combat(data: dict) -> Embed:
+def get_structured_combat(data: dict[int, CombatData]) -> Embed:
     """Get combat embed structured with fields
 
     Args:
@@ -194,7 +192,7 @@ def get_structured_combat(data: dict) -> Embed:
     return embed
 
 
-def get_text_combat(data: dict) -> Embed:
+def get_text_combat(data: dict[int, CombatData]) -> Embed:
     """Get combat embed as text description
 
     Args:
@@ -211,7 +209,7 @@ def get_text_combat(data: dict) -> Embed:
         if initiative:
             body = f"{initiative} "
             for i, c in enumerate(characters):
-                body += f"{(' ' * (2 - len(str(initiative)))) if i == 0 else (' '*3)}{format_character(c)}\n"
+                body += f"{(' ' * (2 - len(str(initiative)))) if i == 0 else (' ' * 3)}{format_character(c)}\n"
         # Otherwise, list characters without initiative at the end
         else:
             body = f"{initiative}\n"
@@ -239,7 +237,7 @@ def get_combat_embed(combat_data: CombatData, as_text: bool = False) -> Embed:
     # Sort by initiative (descending)
     # `None` should be at the bottom of the order,
     # lambda treats `None` as zero for comparisons
-    sorted_data = dict(sorted(binned_data.items(), key=lambda item: item[0] if item[0] is not None else 0, reverse=True))
+    sorted_data = dict(sorted(binned_data.items(), key=lambda item: item[0] if item[0] is not None else 0, reverse=True))  # pyright: ignore[reportUnnecessaryComparison]
 
     if as_text:
         # Format initiative as a code block in the embed description

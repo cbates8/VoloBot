@@ -1,0 +1,56 @@
+# Docker Tasks
+version: "3"
+
+tasks:
+
+  down:
+    desc: Stop and remove container
+    cmd: docker compose down {{.CLI_ARGS}}
+
+  up:
+    desc: Create and start container
+    cmd: docker compose up -d {{.CLI_ARGS}}
+
+  bounce:
+    desc: Stop then start container
+    cmds:
+      - task: down
+      - task: up
+
+  stop:
+    desc: Stop container
+    cmd: docker compose stop {{.CLI_ARGS}}
+
+  start:
+    desc: Start container
+    cmd: docker compose start {{.CLI_ARGS}}
+
+  restart:
+    desc: Restart container
+    cmd: docker compose restart {{.CLI_ARGS}}
+
+  build:
+    desc: Build container
+    cmd: docker compose build {{.CLI_ARGS}}
+
+  rebuild:
+    desc: Remove, build, and start container
+    cmds:
+      - task: down
+      - task: build
+      - task: up
+
+  build-nc:
+    desc: Build container (no cache)
+    cmd: docker compose build {{.CLI_ARGS}} --no-cache
+
+  rebuild-nc:
+    desc: Remove, build (no cache), and start container
+    cmds:
+      - task: down
+      - task: build-nc
+      - task: up
+
+  logs:
+    desc: View container logs
+    cmd: docker compose logs volobot

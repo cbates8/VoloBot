@@ -2,8 +2,8 @@
 
 import argparse
 import os
+from typing import Any
 
-from discord import Embed
 from discord.ext.commands import Bot, Cog, Context, command
 
 from utils.argparse_utils import ArgParseError
@@ -21,34 +21,30 @@ LOGGER = get_logger(os.path.basename(__file__))
 
 
 async def begin_combat(
-    ctx: Context,
+    ctx: Context[Bot],
     combat_client: CombatClient,
     combat_args: CombatArgs,
 ) -> None:
     """Begin a new combat encounter, or load a saved encounter
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with ID of combat to load. If ommitted, a new encounter will be started.
     """
     response = await combat_client.begin(combat_args.combat_id)
-    if isinstance(response, Embed):
-        await ctx.send(embed=response)
-    else:
-        response = "Something went wrong! Could not begin encounter..."
-        await ctx.send(response)
+    await ctx.send(embed=response)
 
 
 async def save_combat(
-    ctx: Context,
+    ctx: Context[Bot],
     combat_client: CombatClient,
     combat_args: CombatArgs,
 ) -> None:
     """Save current combat encounter
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with ID of combat to save
     """
@@ -58,30 +54,26 @@ async def save_combat(
 
 
 async def load_combat(
-    ctx: Context,
+    ctx: Context[Bot],
     combat_client: CombatClient,
     combat_args: CombatArgs,
 ) -> None:
     """Load a saved combat encounter
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with ID of combat to load. If ommitted, saved encounters will be listed.
+        combat_args (`CombatArgs`): Command arguments with ID of combat to load. TODO: If ommitted, saved encounters will be listed.
     """
     response = await combat_client.load(combat_args.combat_id)
-    if isinstance(response, Embed):
-        await ctx.send(embed=response)
-    else:
-        response = "Something went wrong! Could not load encounter..."
-        await ctx.send(response)
+    await ctx.send(embed=response)
 
 
-async def clear_combat(ctx: Context, combat_client: CombatClient, _) -> None:
+async def clear_combat(ctx: Context[Bot], combat_client: CombatClient, _: Any) -> None:  # pyright: ignore[reportExplicitAny]
     """Clear combat encounter
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments
     """
@@ -90,43 +82,35 @@ async def clear_combat(ctx: Context, combat_client: CombatClient, _) -> None:
     await ctx.send(response)
 
 
-async def show_combat(ctx: Context, combat_client: CombatClient, combat_args: CombatArgs) -> None:
+async def show_combat(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
     """Show the combat encounter.
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments
     """
     response = await combat_client.show(combat_args.as_text)
-    if isinstance(response, Embed):
-        await ctx.send(embed=response)
-    else:
-        response = "Something went wrong! Could not generate encounter embed..."
-        await ctx.send(response)
+    await ctx.send(embed=response)
 
 
-async def list_encounters(ctx: Context, combat_client: CombatClient, _) -> None:
+async def list_encounters(ctx: Context[Bot], combat_client: CombatClient, _: Any) -> None:  # pyright: ignore[reportExplicitAny]
     """List the saved combat encounters.
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments
     """
     response = combat_client.list()
-    if isinstance(response, Embed):
-        await ctx.send(embed=response)
-    else:
-        response = "Something went wrong! Could not list encounters..."
-        await ctx.send(response)
+    await ctx.send(embed=response)
 
 
-async def add_character(ctx: Context, combat_client: CombatClient, combat_args: CombatArgs) -> None:
+async def add_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
     """Add a player character to the encounter
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with character data
     """
@@ -138,11 +122,11 @@ async def add_character(ctx: Context, combat_client: CombatClient, combat_args: 
     await ctx.send(response)
 
 
-async def add_monster(ctx: Context, combat_client: CombatClient, combat_args: CombatArgs) -> None:
+async def add_monster(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
     """Add a non-player character to the encounter
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with character data
     """
@@ -154,11 +138,11 @@ async def add_monster(ctx: Context, combat_client: CombatClient, combat_args: Co
     await ctx.send(response)
 
 
-async def update_character(ctx: Context, combat_client: CombatClient, combat_args: CombatArgs) -> None:
+async def update_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
     """Update an existing character
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with character data
     """
@@ -169,11 +153,11 @@ async def update_character(ctx: Context, combat_client: CombatClient, combat_arg
     await ctx.send(response)
 
 
-async def remove_character(ctx: Context, combat_client: CombatClient, combat_args: CombatArgs) -> None:
+async def remove_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
     """Remove a character from the encounter
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with character data
     """
@@ -181,11 +165,11 @@ async def remove_character(ctx: Context, combat_client: CombatClient, combat_arg
     await ctx.send(response)
 
 
-async def heal_character(ctx: Context, combat_client: CombatClient, combat_args: CombatArgs) -> None:
+async def heal_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
     """Heal a character
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with character data
     """
@@ -193,11 +177,11 @@ async def heal_character(ctx: Context, combat_client: CombatClient, combat_args:
     await ctx.send(response)
 
 
-async def damage_character(ctx: Context, combat_client: CombatClient, combat_args: CombatArgs) -> None:
+async def damage_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
     """Heal a character
 
     Args:
-        ctx (`Context`): Message context object from Discord
+        ctx (`Context[Bot]`): Message context object from Discord
         combat_client (`CombatClient`): Combat client
         combat_args (`CombatArgs`): Command arguments with character data
     """
@@ -234,14 +218,14 @@ class Combat(Cog):
         Args:
             bot (`Bot`): Discord Bot object
         """
-        self.bot = bot
+        self.bot: Bot = bot
 
     @command(name="combat", help="Handle combat related tasks")
-    async def handle_combat(self: "Combat", ctx: Context, *args) -> None:
+    async def handle_combat(self: "Combat", ctx: Context[Bot], *args: str) -> None:
         """Begin a new combat encounter, or load a saved encounter
 
         Args:
-            ctx (`Context`): Message context object from Discord
+            ctx (`Context[Bot]`): Message context object from Discord
         """
         try:
             no_em_dash = [arg.replace("—", "--") for arg in args]
