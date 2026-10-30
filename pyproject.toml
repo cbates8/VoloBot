@@ -1,6 +1,6 @@
 [project]
 name = "volobot"
-version = "1.0.0-rc.4"
+version = "1.0.0-rc.5"
 description = "A D&D Discord bot"
 readme = "README.md"
 authors = [
@@ -12,6 +12,7 @@ dependencies = [
     "aiofiles>=25.1.0",
     "beautifulsoup4>=4.14.3",
     "discord-py>=2.6.4",
+    "pydantic>=2.13.5",
 ]
 
 [dependency-groups]

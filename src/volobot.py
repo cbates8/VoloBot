@@ -1,6 +1,6 @@
 """Bot setup for VoloBot: The best D&D Discord bot in the multiverse!
 Author: Casey Bates
-GitHub: https://github.com/cbates8/Volo-Bot
+GitHub: https://github.com/cbates8/VoloBot
 """
 
 import os
@@ -67,6 +67,7 @@ class VoloBot(Bot):
         """
         for extension in self.initial_extensions:
             await bot.load_extension(extension)
+        await self.tree.sync()  # Sync slash commands globally
 
 
 ###############

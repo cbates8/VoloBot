@@ -1,143 +1,136 @@
 """Combat Utils"""
 
 import os
-from dataclasses import asdict
+from typing import Literal
 
 from discord import Embed
 
-from constants.paths import LIVE_COMBAT_PATH, SAVED_COMBAT_DIR
-from utils.combat.types import RAW_CHAR_DICT_TYPE
-from utils.combat.character import (
-    CombatData,
-    load_character_from_args,
-    load_character_from_file,
-    update_character_from_args,
-    update_pc,
-)
-from utils.combat.formatting import get_combat_embed
+from constants.paths import ACTIVE_ENCOUNTER_PATH, SAVED_ENCOUNTER_DIR
+from utils.combat.models import Character
+from utils.combat.character import construct_pc, construct_npc, get_character_by_name
+from utils.combat.types import ENCOUNTER_TYPE
+from utils.combat.formatting import get_encounter_embed
 from utils.json_utils import read_json_async, write_json_async
 from utils.logging import get_logger
 
 LOGGER = get_logger(os.path.basename(__file__))
 
 
-def get_combat_path(combat_id: str | None = None) -> str:
-    """Given a combat ID, get it's filepath
+def get_encounter_path(encounter_id: str | None = None) -> str:
+    """Get the filepath for a combat encounter. If no ID is given, get the path of the "active" encounter.
 
     Args:
-        combat_id (`str`, optional): Combat ID. Defaults to None.
+        encounter_id (`str | None`): ID of the encounter to search for. Defaults to None.
 
     Returns:
-        `str`: Path to saved combat file
+        `str`: Path to saved encounter file
     """
-    return SAVED_COMBAT_DIR + f"/{combat_id}.json" if combat_id else LIVE_COMBAT_PATH
+    return SAVED_ENCOUNTER_DIR + f"/{encounter_id}.json" if encounter_id else ACTIVE_ENCOUNTER_PATH
 
 
-def get_combat_list() -> list[str]:
-    """Get list of saved combat files
+def list_saved_encounters() -> list[str]:
+    """Get list of saved encounters
 
     Returns:
-        `list[str]`: List of combat files
+        `list[str]`: List of encounter files
     """
-    combat_files = os.listdir(SAVED_COMBAT_DIR)
-    filenames = [f.removesuffix(".json") for f in combat_files]
-    return filenames
+    encounter_files = os.listdir(SAVED_ENCOUNTER_DIR)
+    return [f.removesuffix(".json") for f in encounter_files]
 
 
 class CombatClient:
-    """Class to manage a combat encounter"""
+    """Class to manage combat encounters"""
 
     def __init__(self: "CombatClient") -> None:
         """Init Combat"""
-        self.combat_data: CombatData = list()
+        self.active_encounter: ENCOUNTER_TYPE = list()
 
-    async def __load_combat__(self: "CombatClient", combat_id: str | None = None) -> None:
-        """Load a combat file
-
-        Args:
-            combat_id (`str`, optional): ID of the combat to load. If None, load default combat file. Defaults to None.
-        """
-        combat_path = get_combat_path(combat_id)
-        raw_combat_data = await read_json_async(combat_path)
-        self.combat_data = [load_character_from_file(c) for c in raw_combat_data]
-
-    async def __save_combat__(self: "CombatClient", combat_id: str | None = None) -> None:
-        """Save combat data to a file
+    async def __load_encounter__(self: "CombatClient", encounter_id: str | None = None) -> None:
+        """Load an encounter file
 
         Args:
-            combat_id (`str`, optional): ID of the combat to save. If None, save to default combat file. Defaults to None.
+            encounter_id (`str`, optional): ID of the encounter to load. If None, load default encounter file. Defaults to None.
         """
-        combat_path = get_combat_path(combat_id)
-        combat_data_json = [asdict(c) for c in self.combat_data]
-        await write_json_async(combat_path, combat_data_json)
+        encounter_path = get_encounter_path(encounter_id)
+        raw_encounter = await read_json_async(encounter_path)
+        self.active_encounter = [Character(**raw_character) for raw_character in raw_encounter]
 
-    async def __clear_combat__(self: "CombatClient") -> None:
-        """Clear combat data and start fresh.
+    async def __save_encounter__(self: "CombatClient", encounter_id: str | None = None) -> None:
+        """Save encounter to a file
+
+        Args:
+            encounter_id (`str`, optional): ID of the encounter to save. If None, save to default encounter file. Defaults to None.
+        """
+        encounter_path = get_encounter_path(encounter_id)
+        encounter_dump = [character.model_dump() for character in self.active_encounter]
+        await write_json_async(encounter_path, encounter_dump)
+
+    async def __clear_encounter__(self: "CombatClient") -> None:
+        """Clear encounter data and start fresh.
 
         Existing data will be saved to a "backup" file.
         """
-        # Load active combat into memory
-        await self.__load_combat__()
-        # Backup existing combat before clearing *just in case*
-        await self.__save_combat__("backup")
-        # Clear combat in memory
-        self.combat_data = list()
-        # Save new (empty) combat to default file
-        await self.__save_combat__()
+        # Load active encounter into memory
+        await self.__load_encounter__()
+        # Backup existing encounter before clearing *just in case*
+        await self.__save_encounter__("backup")
+        # Clear encounter in memory
+        self.active_encounter = list()
+        # Save new (empty) encounter to default file
+        await self.__save_encounter__()
 
-    async def begin(self: "CombatClient", combat_id: str | None = None) -> Embed:
-        """Initiate a combat encounter.
+    async def begin(self: "CombatClient", encounter_id: str | None = None) -> Embed:
+        """Initiate an encounter.
 
         If preset provided, load encounter from file.
         Otherwise, start new encounter.
 
         Args:
-            combat_id (`str`, optional): ID of the combat to load. Defaults to None.
+            encounter_id (`str`, optional): ID of the encounter to load. Defaults to None.
 
         Returns:
-            `Embed`: Discord Embed representing a combat encounter
+            `Embed`: Discord Embed representing an encounter
         """
-        # Clear existing combat
-        await self.__clear_combat__()
-        # Load combat data
-        await self.__load_combat__(combat_id)
-        # Save combat to "active" file
-        await self.__save_combat__()
+        # Clear existing encounter
+        await self.__clear_encounter__()
+        # Load target encounter data
+        await self.__load_encounter__(encounter_id)
+        # Save encounter to "active" file
+        await self.__save_encounter__()
         # Create embed to send
-        return get_combat_embed(self.combat_data)
+        return get_encounter_embed(self.active_encounter)
 
-    async def save(self: "CombatClient", combat_id: str) -> str:
-        """Save combat
+    async def save(self: "CombatClient", encounter_id: str) -> str:
+        """Save encounter
 
         Args:
-            combat_id (`str`): ID of combat to save
+            encounter_id (`str`): ID of encounter to save
 
         Returns:
-            `str`: Path of the saved combat file
+            `str`: Path of the saved encounter file
         """
-        # Load current combat into memory
-        await self.__load_combat__()
-        # Save combat to specified file
-        await self.__save_combat__(combat_id)
+        # Load current encounter into memory
+        await self.__load_encounter__()
+        # Save encounter to specified file
+        await self.__save_encounter__(encounter_id)
         # Return saved path
-        return get_combat_path(combat_id)
+        return get_encounter_path(encounter_id)
 
-    async def load(self: "CombatClient", combat_id: str) -> Embed:
-        """Load combat
+    async def load(self: "CombatClient", encounter_id: str) -> Embed:
+        """Load encounter
 
         Args:
-            combat_id (`str`, optional): ID of the combat to load
+            encounter_id (`str`, optional): ID of the encounter to load
 
         Returns:
             `Embed`: Discord Embed representing the loaded encounter
         """
-        # TODO: If combat_id is none, list saved IDs?
         # Load saved combat into memory
-        await self.__load_combat__(combat_id)
+        await self.__load_encounter__(encounter_id)
         # Save to "active" file
-        await self.__save_combat__()
+        await self.__save_encounter__()
         # Generate embed
-        return get_combat_embed(self.combat_data)
+        return get_encounter_embed(self.active_encounter)
 
     def list(self: "CombatClient") -> Embed:
         """List saved combats
@@ -145,92 +138,95 @@ class CombatClient:
         Returns:
             `Embed`: Discord embed with list of saved encounters
         """
-        # List existing encounters
-        encounters = get_combat_list()
+        encounters = list_saved_encounters()
         return Embed(title="Saved Encounters:", description="\n".join(encounters))
 
     async def clear(self: "CombatClient") -> None:
-        """Clear combat"""
-        await self.__clear_combat__()
+        """Clear encounter"""
+        await self.__clear_encounter__()
 
     async def show(self: "CombatClient", as_text: bool = False) -> Embed:
-        """Show combat"""
-        # Load active combat into memory
-        await self.__load_combat__()
-        # Generate embed
-        return get_combat_embed(self.combat_data, as_text)
-
-    async def add(self: "CombatClient", char_dict: RAW_CHAR_DICT_TYPE) -> None:
-        """Add a player character to the encounter
+        """Show encounter
 
         Args:
-            char_dict (`dict`): Dict of character data
+            as_text (`bool`): Should format as text instead of structured embed. Defaults to `False`.
         """
-        # Create Character object
-        character = load_character_from_args(char_dict, "pc")
+        # Load active encounter into memory
+        await self.__load_encounter__()
+        # Generate embed
+        return get_encounter_embed(self.active_encounter, as_text)
 
-        # load active combat into memory
-        await self.__load_combat__()
+    async def add(self: "CombatClient", character: Character) -> None:
+        """Add a character to the encounter
 
-        # add character to data
-        self.combat_data.append(character)
+        Args:
+            character (`Character`): Character object to add
+        """
+        # load active encounter into memory
+        await self.__load_encounter__()
+
+        # add character to encounter data
+        self.active_encounter.append(character)
 
         # save to file
-        await self.__save_combat__()
+        await self.__save_encounter__()
 
-    async def madd(self: "CombatClient", char_dict: dict[str, str | int | bool]) -> None:
-        """Add a non-player character (monster) to the encounter
-
-        Args:
-            char_dict (`dict`): Dict of character data
-        """
-        # Create Character object
-        character = load_character_from_args(char_dict, "npc")
-
-        await self.__load_combat__()
-
-        # Add NPC to data
-        self.combat_data.append(character)
-
-        # Save to file
-        await self.__save_combat__()
-
-    async def update(self: "CombatClient", char_dict: dict[str, str | int | bool]) -> str:
-        """Update an existing character (PC or NPC)
+    async def update(  # noqa: PLR0913, PLR0917
+        self: "CombatClient",
+        name: str,
+        initiative: int | None = None,
+        armor_class: int | None = None,
+        current_hp: int | None = None,
+        max_hp: int | None = None,
+        temp_hp: int | None = None,
+        hp_hint: Literal["healthy", "bloodied", "dead"] | None = None,
+        condition_name: str | None = None,
+        condition_duration: str | None = None,
+    ) -> str:
+        """Update an existing character
 
         Args:
-            char_dict (`dict`): Dict of character data
+            name (`str`): Character name
+            initiative (`int | None`): Initiative (optional)
+            armor_class (`int | None`): Armor class (optional)
+            current_hp (`int | None`): Current hit points (optional)
+            max_hp (`int | None`): Maximum hit points (optional)
+            temp_hp (`int | None`): Temporary hit points (optional)
+            hp_hint (`Literal["healthy", "bloodied", "dead"] | None`): Hit points hint
+            condition_name (`str | None`): Condition name (optional)
+            condition_duration (`str | None`): Condition duration (optional)
 
         Returns:
             `str`: Response to send to context
         """
-        # Load combat
-        await self.__load_combat__()
+        # Load encounter
+        await self.__load_encounter__()
 
-        name = char_dict.pop("name")
+        existing_character = get_character_by_name(self.active_encounter, name)
 
-        # TODO: placeholder string confirmation for basedpyright
-        # Will remove this once I've implemented character schema validation
-        if not isinstance(name, str):
-            return f"Name must be a string, instead got {type(name)}: {name}"
+        # Return early if we can't find the character
+        if not existing_character:
+            return f"Could not find character `{name}`"
 
-        # Set default response
-        response = f"Could not find character `{name}`"
+        # Create new character object containing updated fields
+        update_character = (
+            construct_pc(name, initiative, armor_class, current_hp, max_hp, temp_hp, condition_name, condition_duration)
+            if existing_character.type == "pc"
+            else construct_npc(name, initiative, hp_hint, condition_name, condition_duration)
+        )
 
-        # Get character by name
-        # TODO: support get by character ID
-        for character in self.combat_data:
-            if character.name.lower() == name.lower():
-                update_character_from_args(character, char_dict)
-                response = f"Updated character `{name}`"
-                break
+        # Get index of the existing character
+        existing_character_index = self.active_encounter.index(existing_character)
+
+        # Apply updates to the existing character
+        self.active_encounter[existing_character_index] = existing_character.model_copy(update=update_character.model_dump(exclude_unset=True))
 
         # Save to file
-        await self.__save_combat__()
-        return response
+        await self.__save_encounter__()
+        return f"Updated character `{name}`"
 
     async def remove(self: "CombatClient", name: str) -> str:
-        """Remove a character from combat (PR or NPC)
+        """Remove a character from the active encounter
 
         Args:
             name (`str`): Name of the character to remove
@@ -238,75 +234,102 @@ class CombatClient:
         Returns:
             `str`: Response to send to context
         """
-        # Load combat
-        await self.__load_combat__()
+        # Load encounter
+        await self.__load_encounter__()
 
         # Try to find matching character
-        character_to_remove = None
-        for character in self.combat_data:
-            if character.name.lower() == name.lower():
-                character_to_remove = character
-                break
+        character_to_remove = get_character_by_name(self.active_encounter, name)
 
-        # If found, remove character
-        # Otherwise, exit
-        if character_to_remove:
-            self.combat_data.remove(character_to_remove)
-        else:
+        # Return early if we can't find the character
+        if not character_to_remove:
             return f"Could not find character `{name}`"
 
+        # Remove entry from active encounter
+        self.active_encounter.remove(character_to_remove)
+
         # Save to file
-        await self.__save_combat__()
+        await self.__save_encounter__()
         return f"Removed character `{name}`"
 
     async def heal(self: "CombatClient", name: str, amount: int) -> str:
         """Heal an existing character (PC only)
 
         Args:
+            name (`str`): Name of the character to heal
             amount (`int`): Amount to heal character
 
         Returns:
             `str`: Response to send to context
         """
-        # Load combat
-        await self.__load_combat__()
+        # Load encounter
+        await self.__load_encounter__()
 
-        response = f"Could not find character `{name}`"
+        existing_character = get_character_by_name(self.active_encounter, name)
 
-        # Get character by name (TODO: support character ID)
-        for character in self.combat_data:
-            if character.name.lower() == name.lower():
-                new_hp = character.hp.current + amount
-                update_pc(character, "chp", new_hp)
-                response = f"Updated character `{name}` - HP: {new_hp}"
-                break
+        # Return early if we can't find the character
+        if not existing_character:
+            return f"Could not find character `{name}`"
+
+        # Return early if character is an NPC
+        if existing_character.type == "npc":
+            return f"Character `{name}` is an NPC! Complain to my creator that this isn't implemented yet"
+
+        # Return early if character doesn't have hp
+        if not existing_character.hp or not existing_character.hp.current:
+            return f"Character `{name}` does not have HP set..."
+
+        new_hp = existing_character.hp.current + amount
+
+        # Create new character object containing updated hp
+        update_character = construct_pc(name, current_hp=new_hp)
+
+        # Get index of the existing character
+        existing_character_index = self.active_encounter.index(existing_character)
+
+        # Apply updates to the existing character
+        self.active_encounter[existing_character_index] = existing_character.model_copy(update=update_character.model_dump(exclude_unset=True))
 
         # Save to file
-        await self.__save_combat__()
-        return response
+        await self.__save_encounter__()
+        return f"Healed character `{name}` by {amount} points"
 
     async def dmg(self: "CombatClient", name: str, amount: int) -> str:
         """Damage an existing character (PC only)
 
         Args:
+            name (`str`): Name of the character to heal
             amount (`int`): Amount to heal character
 
         Returns:
             `str`: Response to send to context
         """
-        # Load combat
-        await self.__load_combat__()
+        # Load encounter
+        await self.__load_encounter__()
+        existing_character = get_character_by_name(self.active_encounter, name)
 
-        response = f"Could not find character `{name}`"
+        # Return early if we can't find the character
+        if not existing_character:
+            return f"Could not find character `{name}`"
 
-        # Get character by name (TODO: support character ID)
-        for character in self.combat_data:
-            if character.name.lower() == name.lower():
-                new_hp = character.hp.current - amount
-                update_pc(character, "chp", new_hp)
-                response = f"Updated character `{name}` - HP: {new_hp}"
-                break
+        # Return early if character is an NPC
+        if existing_character.type == "npc":
+            return f"Character `{name}` is an NPC! Complain to my creator that this isn't implemented yet"
+
+        # Return early if character doesn't have hp
+        if not existing_character.hp or not existing_character.hp.current:
+            return f"Character `{name}` does not have HP set..."
+
+        new_hp = existing_character.hp.current - amount
+
+        # Create new character object containing updated hp
+        update_character = construct_pc(name, current_hp=new_hp)
+
+        # Get index of the existing character
+        existing_character_index = self.active_encounter.index(existing_character)
+
+        # Apply updates to the existing character
+        self.active_encounter[existing_character_index] = existing_character.model_copy(update=update_character.model_dump(exclude_unset=True))
 
         # Save to file
-        await self.__save_combat__()
-        return response
+        await self.__save_encounter__()
+        return f"Damaged character `{name}` by {amount} points"

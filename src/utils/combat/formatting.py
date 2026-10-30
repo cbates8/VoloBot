@@ -5,7 +5,8 @@ import os
 from discord import Embed
 
 from constants.colors import ANSI_WRAPPER, GREY_WRAPPER, NORMAL_WRAPPER, RED_WRAPPER
-from utils.combat.character import Character, CombatData, Condition, HitPoints
+from utils.combat.types import ENCOUNTER_TYPE, BINNED_ENCOUNTER_TYPE
+from utils.combat.models import Character, Condition, HitPoints
 from utils.logging import get_logger
 
 LOGGER = get_logger(os.path.basename(__file__))
@@ -16,7 +17,7 @@ LOGGER = get_logger(os.path.basename(__file__))
 ###########################
 
 INDICATOR_WRAPPER = "- {body}\n"
-## PC Combat Indicator ##
+## PC Indicator ##
 # - Nibis Wickelhackle <8/12 HP> [AC 18] (Guidance - 5 turns)
 HP_STRING = "<{current}/{max} HP>"  # TODO: Support for temp HP
 AC_STRING = "[{ac} AC]"
@@ -25,7 +26,7 @@ CONDITION_STRING = "{condition} {duration}"
 CONDITION_WRAPPER = "({conditions})"
 PC_STRING = "{name} {hp} {ac} {conditions}"
 
-## Monster/NPC Combat Indicator ##
+## Monster/NPC Indicator ##
 # - Bugbear <Bloodied> (Frightened - 1 turn)
 HEALTHY = "<😁>"
 BLOODIED = "<🥵>"
@@ -97,13 +98,13 @@ def format_pc(character: Character) -> str:
         `str`: Formatted PC string
     """
     # Format HP
-    hp_string = format_pc_hp(character.hp)
+    hp_string = format_pc_hp(character.hp) if character.hp else ""
 
     # Format AC
     ac_string = format_ac(character.ac)
 
     # Format Conditions
-    conditions_string = format_conditions(character.conditions)
+    conditions_string = format_conditions(character.conditions) if character.conditions else ""
 
     # Format final character string
     pc_str = PC_STRING.format(name=character.name, hp=hp_string, ac=ac_string, conditions=conditions_string)
@@ -119,10 +120,10 @@ def format_npc(character: Character) -> str:
     Returns:
         `str`: Formatted NPC string
     """
-    hp_config = NPC_HP_CONFIG[character.hp.hint]
+    hp_config = NPC_HP_CONFIG[character.hp.hint if character.hp else None]
 
     # Format Conditions
-    conditions_string = format_conditions(character.conditions)
+    conditions_string = format_conditions(character.conditions) if character.conditions else ""
 
     npc_str = NPC_STRING.format(name=character.name, hp=hp_config["display"], conditions=conditions_string)
     formatted_str = hp_config["format_wrapper"].format(body=npc_str)
@@ -150,30 +151,43 @@ def format_character(character: Character) -> str:
 ###############
 
 
-def bin_combat_by_initiative(combat_data: CombatData) -> dict[int, CombatData]:
-    """Organize combat into initiative bins
+def bin_encounter_by_initiative(encounter: ENCOUNTER_TYPE) -> BINNED_ENCOUNTER_TYPE:
+    """Organize combat into initiative bins. e.g. { 10: [Character, Character], ... }
 
     Args:
-        combat_data (`CombatData`): Data to organize
+        encounter (`ENCOUNTER_TYPE`): Data to organize
 
     Returns:
-        `dict[int, CombatData]`: Binned combat data
+        `BINNED_ENCOUNTER_TYPE`: Binned encounter data
     """
-    binned_data: dict[int, list[Character]] = dict()
-    for c in combat_data:
-        i = c.initiative
+    binned_data: BINNED_ENCOUNTER_TYPE = dict()
+    for character in encounter:
+        i = character.initiative
         if i not in binned_data.keys():
             binned_data[i] = list()
-
-        binned_data[i] += [c]
+        binned_data[i].append(character)
     return binned_data
 
 
-def get_structured_combat(data: dict[int, CombatData]) -> Embed:
-    """Get combat embed structured with fields
+def sort_binned_encounter(binned_encounter: BINNED_ENCOUNTER_TYPE) -> BINNED_ENCOUNTER_TYPE:
+    """Sort binned encounter by initiative, descending.
+    `None` should be at the bottom of the order, representing characters without initiative
 
     Args:
-        data (`dict`): Combat data
+        binned_encounter (`BINNED_ENCOUNTER_TYPE`): Encounter data binned by initiative
+
+    Returns:
+        `BINNED_ENCOUNTER_TYPE`: Encounter data sorted by initiative
+    """
+    # lambda treats `None` as zero for comparisons
+    return dict(sorted(binned_encounter.items(), key=lambda item: item[0] if item[0] is not None else 0, reverse=True))
+
+
+def get_structured_encounter(binned_encounter: BINNED_ENCOUNTER_TYPE) -> Embed:
+    """Get encounter embed structured with fields
+
+    Args:
+        binned_encounter (`BINNED_ENCOUNTER_TYPE`): Encounter data binned by initiative
 
     Returns:
         `Embed`: Formatted embed
@@ -181,7 +195,7 @@ def get_structured_combat(data: dict[int, CombatData]) -> Embed:
     embed = Embed(title="Combat")
     # For each initiative bin,
     # format character strings and add embed field
-    for initiative, characters in data.items():
+    for initiative, characters in binned_encounter.items():
         body = ""
         for c in characters:
             body += format_character(c)
@@ -192,11 +206,11 @@ def get_structured_combat(data: dict[int, CombatData]) -> Embed:
     return embed
 
 
-def get_text_combat(data: dict[int, CombatData]) -> Embed:
-    """Get combat embed as text description
+def get_text_encounter(binned_encounter: BINNED_ENCOUNTER_TYPE) -> Embed:
+    """Get encounter embed as text description
 
     Args:
-        data (`dict`): Combat data
+        binned_encounter (`BINNED_ENCOUNTER_TYPE`): Encounter data binned by initiative
 
     Returns:
         `Embed`: Formatted embed
@@ -204,7 +218,7 @@ def get_text_combat(data: dict[int, CombatData]) -> Embed:
     # For each initiative bin,
     # format character strings and add to embed description
     description = ""
-    for initiative, characters in data.items():
+    for initiative, characters in binned_encounter.items():
         # If character has an initiative, format them appropriately
         if initiative:
             body = f"{initiative} "
@@ -220,28 +234,25 @@ def get_text_combat(data: dict[int, CombatData]) -> Embed:
     return Embed(title="Combat", description=description)
 
 
-def get_combat_embed(combat_data: CombatData, as_text: bool = False) -> Embed:
-    """Format combat data as a Discord embed
+def get_encounter_embed(encounter: ENCOUNTER_TYPE, as_text: bool = False) -> Embed:
+    """Format encounter data as a Discord embed
 
     Args:
-        combat_data (`CombatData`): Combat data
+        encounter (`ENCOUNTER_TYPE`): Encounter to format
         as_text (`bool`, optional): Should format as text. Defaults to False.
 
     Returns:
         `Embed`: Formatted embed
     """
     # Bin by initiative
-    # { 10: [Character, Character], ... }
-    binned_data = bin_combat_by_initiative(combat_data)
+    binned_encounter = bin_encounter_by_initiative(encounter)
 
-    # Sort by initiative (descending)
-    # `None` should be at the bottom of the order,
-    # lambda treats `None` as zero for comparisons
-    sorted_data = dict(sorted(binned_data.items(), key=lambda item: item[0] if item[0] is not None else 0, reverse=True))  # pyright: ignore[reportUnnecessaryComparison]
+    # Sort by initiative
+    sorted_encounter = sort_binned_encounter(binned_encounter)
 
     if as_text:
         # Format initiative as a code block in the embed description
-        return get_text_combat(sorted_data)
+        return get_text_encounter(sorted_encounter)
     else:
         # Format initiative as a embed field for each turn
-        return get_structured_combat(sorted_data)
+        return get_structured_encounter(sorted_encounter)

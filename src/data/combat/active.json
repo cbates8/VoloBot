@@ -1,0 +1,92 @@
+[
+    {
+        "name": "Nibis",
+        "type": "pc",
+        "hp": {
+            "current": 30,
+            "max": 30,
+            "temp": null,
+            "hint": null
+        },
+        "ac": 18,
+        "initiative": null
+    },
+    {
+        "name": "Gex",
+        "type": "pc",
+        "hp": {
+            "current": 20,
+            "max": 20,
+            "temp": null,
+            "hint": null
+        },
+        "ac": 16,
+        "initiative": null
+    },
+    {
+        "name": "Vyranor",
+        "type": "pc",
+        "hp": {
+            "current": 24,
+            "max": 24,
+            "temp": null,
+            "hint": null
+        },
+        "ac": 14,
+        "initiative": null
+    },
+    {
+        "name": "Irmgard",
+        "type": "pc",
+        "hp": {
+            "current": 31,
+            "max": 31,
+            "temp": null,
+            "hint": null
+        },
+        "ac": 18,
+        "initiative": null
+    },
+    {
+        "name": "Ailouras",
+        "type": "pc",
+        "hp": {
+            "current": 27,
+            "max": 27,
+            "temp": null,
+            "hint": null
+        },
+        "ac": 14,
+        "initiative": null
+    },
+    {
+        "name": "Aerion",
+        "type": "pc",
+        "hp": {
+            "current": 21,
+            "max": 21,
+            "temp": null,
+            "hint": null
+        },
+        "ac": 15,
+        "initiative": null
+    },
+    {
+        "name": "test",
+        "type": "pc",
+        "hp": {
+            "current": 15,
+            "max": 40,
+            "temp": null,
+            "hint": null
+        },
+        "ac": 12,
+        "initiative": 5,
+        "conditions": [
+            {
+                "name": "sleepy",
+                "duration": null
+            }
+        ]
+    }
+]

@@ -1,216 +1,15 @@
-"""Combat Commands"""
+"""Combat Slash Commands"""
 
-import argparse
-import os
-from typing import Any
-
-from discord.ext.commands import Bot, Cog, Context, command
-
-from utils.argparse_utils import ArgParseError
-from utils.combat.args import CombatArgs, get_combat_args
+import random
+from typing import Literal
+from discord.ext.commands import Bot, Cog
+from discord import app_commands, Interaction
 from utils.combat.client import CombatClient
-from utils.embed import create_error_embed
-from utils.logging import get_logger
-
-LOGGER = get_logger(os.path.basename(__file__))
-
-
-######################
-## COMBAT FUNCTIONS ##
-######################
-
-
-async def begin_combat(
-    ctx: Context[Bot],
-    combat_client: CombatClient,
-    combat_args: CombatArgs,
-) -> None:
-    """Begin a new combat encounter, or load a saved encounter
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with ID of combat to load. If ommitted, a new encounter will be started.
-    """
-    response = await combat_client.begin(combat_args.combat_id)
-    await ctx.send(embed=response)
-
-
-async def save_combat(
-    ctx: Context[Bot],
-    combat_client: CombatClient,
-    combat_args: CombatArgs,
-) -> None:
-    """Save current combat encounter
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with ID of combat to save
-    """
-    combat_path = await combat_client.save(combat_args.combat_id)
-    response = f"Saved combat to `{combat_path}`"
-    await ctx.send(response)
-
-
-async def load_combat(
-    ctx: Context[Bot],
-    combat_client: CombatClient,
-    combat_args: CombatArgs,
-) -> None:
-    """Load a saved combat encounter
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with ID of combat to load. TODO: If ommitted, saved encounters will be listed.
-    """
-    response = await combat_client.load(combat_args.combat_id)
-    await ctx.send(embed=response)
-
-
-async def clear_combat(ctx: Context[Bot], combat_client: CombatClient, _: Any) -> None:  # pyright: ignore[reportExplicitAny]
-    """Clear combat encounter
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments
-    """
-    await combat_client.clear()
-    response = "Cleared currrent combat"
-    await ctx.send(response)
-
-
-async def show_combat(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
-    """Show the combat encounter.
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments
-    """
-    response = await combat_client.show(combat_args.as_text)
-    await ctx.send(embed=response)
-
-
-async def list_encounters(ctx: Context[Bot], combat_client: CombatClient, _: Any) -> None:  # pyright: ignore[reportExplicitAny]
-    """List the saved combat encounters.
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments
-    """
-    response = combat_client.list()
-    await ctx.send(embed=response)
-
-
-async def add_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
-    """Add a player character to the encounter
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with character data
-    """
-    char_dict = combat_args.__dict__
-    # Remove the sub_command item from the dict
-    del char_dict["sub_command"]
-    await combat_client.add(char_dict)
-    response = f"Added PC `{combat_args.name}`"
-    await ctx.send(response)
-
-
-async def add_monster(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
-    """Add a non-player character to the encounter
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with character data
-    """
-    char_dict = combat_args.__dict__
-    # Remove the sub_command item from the dict
-    del char_dict["sub_command"]
-    await combat_client.madd(char_dict)
-    response = f"Added NPC `{combat_args.name}`"
-    await ctx.send(response)
-
-
-async def update_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
-    """Update an existing character
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with character data
-    """
-    char_dict = combat_args.__dict__
-    # Remove the sub_command item from the dict
-    del char_dict["sub_command"]
-    response = await combat_client.update(char_dict)
-    await ctx.send(response)
-
-
-async def remove_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
-    """Remove a character from the encounter
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with character data
-    """
-    response = await combat_client.remove(combat_args.name)
-    await ctx.send(response)
-
-
-async def heal_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
-    """Heal a character
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with character data
-    """
-    response = await combat_client.heal(combat_args.name, combat_args.amount)
-    await ctx.send(response)
-
-
-async def damage_character(ctx: Context[Bot], combat_client: CombatClient, combat_args: CombatArgs) -> None:
-    """Heal a character
-
-    Args:
-        ctx (`Context[Bot]`): Message context object from Discord
-        combat_client (`CombatClient`): Combat client
-        combat_args (`CombatArgs`): Command arguments with character data
-    """
-    response = await combat_client.dmg(combat_args.name, combat_args.amount)
-    await ctx.send(response)
-
-
-###############
-## COG SETUP ##
-###############
-
-COMBAT_COMMAND_CALLABLE_MAP = {
-    "begin": begin_combat,
-    "save": save_combat,
-    "load": load_combat,
-    "clear": clear_combat,
-    "show": show_combat,
-    "list": list_encounters,
-    "add": add_character,
-    "madd": add_monster,
-    "update": update_character,
-    "rm": remove_character,
-    "heal": heal_character,
-    "dmg": damage_character,
-}
+from utils.combat.character import construct_pc, construct_npc
 
 
 class Combat(Cog):
-    """Cog defining commands related to combat"""
+    """Cog defining slash commands related to combat"""
 
     def __init__(self: "Combat", bot: Bot) -> None:
         """Init Cog
@@ -219,35 +18,217 @@ class Combat(Cog):
             bot (`Bot`): Discord Bot object
         """
         self.bot: Bot = bot
+        self.combat_client: CombatClient = CombatClient()
 
-    @command(name="combat", help="Handle combat related tasks")
-    async def handle_combat(self: "Combat", ctx: Context[Bot], *args: str) -> None:
-        """Begin a new combat encounter, or load a saved encounter
+    # --------------------------------------------------------
+    group: app_commands.Group = app_commands.Group(name="combat", description="...")
+    # --------------------------------------------------------
+
+    @app_commands.command(name="echo", description="echo your message")
+    async def _echo(self, interaction: Interaction, msg: str):
+        result: list[str] = list()
+        for char in msg:
+            if char.isalpha():
+                # Randomize or alternate case (using random choice here)
+                if random.choice([True, False]):
+                    result.append(char.upper())
+                else:
+                    result.append(char.lower())
+            else:
+                result.append(char)
+        await interaction.response.send_message("".join(result))
+
+    #####################
+    # Combat management #
+    #####################
+
+    @group.command(name="begin", description="Create a fresh encounter, or start a saved encounter")
+    async def _begin(self: "Combat", interaction: Interaction, encounter_id: str | None = None) -> None:
+        """Generate a new encounter, or load a saved encounter
 
         Args:
-            ctx (`Context[Bot]`): Message context object from Discord
+            interaction (`Interaction`): Interaction object from Discord
+            encounter_id (`str | None`): ID of encounter to load. If ommitted, a new encounter will be started.
         """
-        try:
-            no_em_dash = [arg.replace("—", "--") for arg in args]
-            combat_args = get_combat_args(*no_em_dash)
-        except (ArgParseError, argparse.ArgumentError, argparse.ArgumentTypeError) as error:
-            LOGGER.exception(error, exc_info=error)
-            embed = create_error_embed(error, multiline=True)
-            await ctx.send(embed=embed)
-            return
+        response = await self.combat_client.begin(encounter_id)
+        await interaction.response.send_message(embed=response)
 
-        try:
-            command_callable = COMBAT_COMMAND_CALLABLE_MAP[combat_args.sub_command]
-        except KeyError as error:
-            response = "should not have gotten here...."
-            await ctx.send(response)
-            LOGGER.exception(error, exc_info=error)
-            embed = create_error_embed(error)
-            await ctx.send(embed=embed)
-            return
+    @group.command(name="save", description="Save current encounter")
+    async def _save(self: "Combat", interaction: Interaction, encounter_id: str) -> None:
+        """Save current encounter
 
-        combat_client = CombatClient()
-        await command_callable(ctx, combat_client, combat_args)
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            encounter_id (`str`): ID of encounter to save
+        """
+        encounter_path = await self.combat_client.save(encounter_id)
+        await interaction.response.send_message(f"Saved encounter to `{encounter_path}`")
+
+    @group.command(name="load", description="Load a saved encounter")
+    async def _load(self: "Combat", interaction: Interaction, encounter_id: str) -> None:
+        """Save current encounter
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            encounter_id (`str`): ID of encounter to load
+        """
+        response = await self.combat_client.load(encounter_id)
+        await interaction.response.send_message(embed=response)
+
+    @group.command(name="clear", description="Clear current encounter")
+    async def _clear(self: "Combat", interaction: Interaction) -> None:
+        """Clear current encounter
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+        """
+        await self.combat_client.clear()
+        await interaction.response.send_message("Cleared currrent encounter")
+
+    @group.command(name="show", description="Display the current encounter")
+    async def _show(self: "Combat", interaction: Interaction, as_text: bool = False) -> None:
+        """Show current encounter
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            as_text (`bool`): Should format as text instead of structured embed. Defaults to `False`.
+        """
+        response = await self.combat_client.show(as_text)
+        await interaction.response.send_message(embed=response)
+
+    @group.command(name="list", description="List saved encounters")
+    async def _list(self: "Combat", interaction: Interaction) -> None:
+        """List saved encounters
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+        """
+        response = self.combat_client.list()
+        await interaction.response.send_message(embed=response)
+
+    ########################
+    # Character management #
+    ########################
+
+    @group.command(name="add_character", description="Add a new PC")
+    async def _add_character(  # noqa: PLR0913, PLR0917
+        self: "Combat",
+        interaction: Interaction,
+        name: str,
+        initiative: int | None = None,
+        armor_class: int | None = None,
+        current_hp: int | None = None,
+        max_hp: int | None = None,
+        temp_hp: int | None = None,
+        condition_name: str | None = None,
+        condition_duration: str | None = None,
+    ) -> None:
+        """Add a player character to the encounter
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            name (`str`): Character name
+            initiative (`int | None`): Initiative (optional)
+            armor_class (`int | None`): Armor class (optional)
+            current_hp (`int | None`): Current hit points (optional)
+            max_hp (`int | None`): Maximum hit points (optional)
+            temp_hp (`int | None`): Temporary hit points (optional)
+            condition_name (`str | None`): Condition name (optional)
+            condition_duration (`str | None`): Condition duration (optional)
+        """
+        character = construct_pc(name, initiative, armor_class, current_hp, max_hp, temp_hp, condition_name, condition_duration)
+        await self.combat_client.add(character)
+        await interaction.response.send_message(f"Added PC `{character.name}`")
+
+    @group.command(name="add_npc", description="Add a new NPC")
+    async def _add_npc(  # noqa: PLR0913, PLR0917
+        self: "Combat",
+        interaction: Interaction,
+        name: str,
+        initiative: int | None = None,
+        hp_hint: Literal["healthy", "bloodied", "dead"] | None = None,
+        condition_name: str | None = None,
+        condition_duration: str | None = None,
+    ) -> None:
+        """Add a player character to the encounter
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            name (`str`): Character name
+            initiative (`int | None`): Initiative (optional)
+            hp_hint (`Literal["healthy", "bloodied", "dead"] | None`): Hit points hint
+            condition_name (`str | None`): Condition name (optional)
+            condition_duration (`str | None`): Condition duration (optional)
+        """
+        character = construct_npc(name, initiative, hp_hint, condition_name, condition_duration)
+        await self.combat_client.add(character)
+        await interaction.response.send_message(f"Added NPC `{character.name}`")
+
+    @group.command(name="update_character", description="Update a character")
+    async def _update_character(  # noqa: PLR0913, PLR0917
+        self: "Combat",
+        interaction: Interaction,
+        name: str,
+        initiative: int | None = None,
+        armor_class: int | None = None,
+        current_hp: int | None = None,
+        max_hp: int | None = None,
+        temp_hp: int | None = None,
+        hp_hint: Literal["healthy", "bloodied", "dead"] | None = None,
+        condition_name: str | None = None,
+        condition_duration: str | None = None,
+    ) -> None:
+        """Update an existing character
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            name (`str`): Character name
+            initiative (`int | None`): Initiative (optional)
+            armor_class (`int | None`): Armor class (optional)
+            current_hp (`int | None`): Current hit points (optional)
+            max_hp (`int | None`): Maximum hit points (optional)
+            temp_hp (`int | None`): Temporary hit points (optional)
+            hp_hint (`Literal["healthy", "bloodied", "dead"] | None`): Hit points hint
+            condition_name (`str | None`): Condition name (optional)
+            condition_duration (`str | None`): Condition duration (optional)
+        """
+        response = await self.combat_client.update(name, initiative, armor_class, current_hp, max_hp, temp_hp, hp_hint, condition_name, condition_duration)
+        await interaction.response.send_message(response)
+
+    @group.command(name="remove_character", description="Remove a character")
+    async def _remove_character(self: "Combat", interaction: Interaction, name: str) -> None:
+        """Remove a character
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            name (`str`): Character name
+        """
+        response = await self.combat_client.remove(name)
+        await interaction.response.send_message(response)
+
+    @group.command(name="heal_character", description="Heal a character")
+    async def _heal_character(self: "Combat", interaction: Interaction, name: str, amount: int) -> None:
+        """Heal a character
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            name (`str`): Character name
+            amount (`int`): Amount to heal character
+        """
+        response = await self.combat_client.heal(name, amount)
+        await interaction.response.send_message(response)
+
+    @group.command(name="damage_character", description="Damage a character")
+    async def _damage_character(self: "Combat", interaction: Interaction, name: str, amount: int) -> None:
+        """Damage a character
+
+        Args:
+            interaction (`Interaction`): Interaction object from Discord
+            name (`str`): Character name
+            amount (`int`): Amount to damage character
+        """
+        response = await self.combat_client.dmg(name, amount)
+        await interaction.response.send_message(response)
 
 
 async def setup(bot: Bot) -> None:
