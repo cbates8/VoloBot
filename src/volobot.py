@@ -39,7 +39,6 @@ INITIAL_EXTENSIONS = [
     "commands.spell",
     "commands.rule",
     "commands.combat",
-    "commands.combat_slash",
 ]
 
 

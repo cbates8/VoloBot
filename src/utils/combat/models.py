@@ -25,7 +25,7 @@ class Character(BaseModel):
 
     name: str
     type: Literal["pc", "npc"]
-    hp: HitPoints
-    ac: int | None = None
     initiative: int | None = None
+    hp: HitPoints | None = None
+    ac: int | None = None
     conditions: list[Condition] | None = None
