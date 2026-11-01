@@ -1,6 +1,22 @@
 # CHANGELOG
 
 
+## v1.0.0-rc.6+pr-6 (2026-11-01)
+
+### Other
+
+- 💚 ci: add pr number to prerelease tag
+  ([`fb9f29a`](https://github.com/cbates8/VoloBot/commit/fb9f29a63fe9cf2d0778e11fe47401285133e512))
+
+- 💚 ci: add workflow to clean up pre-releases
+  ([`0e9d89f`](https://github.com/cbates8/VoloBot/commit/0e9d89f575c448aaa909d0a93c42cf5d610d773b))
+
+### ⚰️
+
+- ⚰️ dead: remove unused argparse utils
+  ([`e702968`](https://github.com/cbates8/VoloBot/commit/e702968a06627f414b64176885a9f4666c351037))
+
+
 ## v1.0.0-rc.5 (2026-10-30)
 
 ### Other

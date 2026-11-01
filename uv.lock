@@ -1002,7 +1002,7 @@ wheels = [
 
 [[package]]
 name = "volobot"
-version = "1.0.0rc5"
+version = "1.0.0rc6+pr.6"
 source = { virtual = "." }
 dependencies = [
     { name = "aiocsv" },
