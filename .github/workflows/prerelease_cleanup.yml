@@ -1,0 +1,41 @@
+name: VoloBot Pre-Release Cleanup
+
+on:
+  workflow_call:
+  pull_request:
+    types: [closed]
+
+jobs:
+  prerelease-cleanup:
+    runs-on: ubuntu-latest
+
+    permissions:
+      id-token: write
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Authenticate with GitHub CLI
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
+
+      - name: Remove Pre-Release Tags and Associated Releases
+        run: |
+          export suffix=pr-${{ github.event.pull_request.number }}
+          export repo=${{ github.repository }}
+
+          # List all releases
+          releases=$(gh api repos/$repo/releases --jq '.[] | select(.tag_name | endswith($ENV.suffix)) | .id')
+
+          # Delete releases
+          for release_id in $releases; do
+            gh api repos/$repo/releases/$release_id -X DELETE
+          done
+
+          # List all tags
+          tags=$(gh api repos/$repo/git/refs/tags --jq '.[] | select(.ref | endswith($ENV.suffix)) | .ref')
+
+          # Delete tags
+          for tag in $tags; do
+            gh api repos/$repo/git/$tag -X DELETE
+          done

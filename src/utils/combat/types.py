@@ -1,2 +1,6 @@
-RAW_CHAR_DICT_TYPE = dict[str, str | int | bool]
-PARSED_CHAR_DICT_TYPE = dict[str, str | int | None | dict[str, str | int]]
+"""Combat Types"""
+
+from utils.combat.models import Character
+
+ENCOUNTER_TYPE = list[Character]
+BINNED_ENCOUNTER_TYPE = dict[int | None, list[Character]]

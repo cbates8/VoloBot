@@ -2,7 +2,6 @@
 version: "3"
 
 tasks:
-
   down:
     desc: Stop and remove container
     cmd: docker compose down {{.CLI_ARGS}}
@@ -53,4 +52,8 @@ tasks:
 
   logs:
     desc: View container logs
-    cmd: docker compose logs volobot
+    cmd: docker compose logs {{.CLI_ARGS}} volobot
+
+  follow:
+    desc: Stream container logs
+    cmd: docker compose logs {{.CLI_ARGS}} -f volobot
