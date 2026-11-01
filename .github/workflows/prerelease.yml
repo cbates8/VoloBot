@@ -72,6 +72,7 @@ jobs:
         id: psr
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          build_metadata: "pr-${{ github.event.pull_request.number }}"
 
   # Build and Push to GHCR
   # https://pradumnasaraf.dev/blog/publish-image-on-ghcr
